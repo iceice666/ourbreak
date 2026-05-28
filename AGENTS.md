@@ -1,0 +1,83 @@
+# AGENTS.md
+
+Guidelines for AI coding agents (Claude Code, Codex, Copilot, etc.) working in this repository.
+
+---
+
+## Project overview
+
+**ourcraft** is a Java 21 project built with Gradle.  
+License: MIT — see `LICENSE`.
+
+---
+
+## Environment
+
+The dev environment is fully declared in `flake.nix` using Nix flakes.  
+All commands below assume you are inside the dev shell.
+
+```bash
+# Enter the dev shell
+nix develop
+
+# Or automatically via direnv (add once, then it activates on cd)
+echo 'use flake' > .envrc && direnv allow
+```
+
+Runtime: **Java 21** (`JAVA_HOME` is set automatically by the shell).  
+Build tool: **Gradle** (wrapper preferred once scaffolded — use `./gradlew`, fall back to `gradle` if no wrapper yet).
+
+---
+
+## Common commands
+
+| Task | Command |
+|------|---------|
+| Build | `./gradlew build` |
+| Run tests | `./gradlew test` |
+| Clean | `./gradlew clean` |
+| Single test class | `./gradlew test --tests "com.example.FooTest"` |
+| Dependency report | `./gradlew dependencies` |
+| Format / lint | *(add tool here when configured)* |
+
+> Before running any command, make sure the Nix dev shell is active (`nix develop`).
+
+---
+
+## Code conventions
+
+- **Language level**: Java 21 — use modern features (records, sealed classes, pattern matching, text blocks) where they improve clarity.
+- **Package root**: use `com.ourcraft` as the base package.
+- **Formatting**: 4-space indentation, K&R braces, max line length 120.
+- **Naming**: classes `UpperCamelCase`, methods/variables `lowerCamelCase`, constants `UPPER_SNAKE_CASE`.
+- **Null handling**: prefer `Optional<T>` for return values that may be absent; avoid returning raw `null` from public APIs.
+- **Tests**: JUnit 5 (`@Test` from `org.junit.jupiter.api`). One test class per production class, named `*Test`. Arrange–Act–Assert pattern.
+
+---
+
+## Repository layout (expected after scaffolding)
+
+```
+ourcraft/
+├── flake.nix          # Nix dev environment
+├── flake.lock         # Pinned Nix inputs — commit this
+├── build.gradle(.kts) # Gradle build script
+├── settings.gradle    # Project name / subprojects
+├── gradlew            # Gradle wrapper (commit this)
+├── src/
+│   ├── main/java/com/ourcraft/   # Production code
+│   └── test/java/com/ourcraft/   # Test code
+└── AGENTS.md          # This file
+```
+
+---
+
+## Agent rules
+
+1. **Always work inside `nix develop`** — do not assume system Java or Gradle.
+2. **Never commit generated build artefacts** — `*.class`, `*.jar`, `build/`, `.gradle/` are gitignored.
+3. **Keep `flake.lock` committed** — it pins the exact toolchain; do not delete or regenerate it without good reason.
+4. **Run tests before marking a task done** — `./gradlew test` must pass (zero failures, zero errors).
+5. **One logical change per commit** — follow Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`).
+6. **Do not modify `flake.nix` / `flake.lock` unless explicitly asked** — toolchain changes are intentional.
+7. **Ask before adding dependencies** — new Gradle dependencies need justification; prefer the Java standard library and well-known libraries (Guava, Jackson, JUnit 5).
