@@ -103,7 +103,25 @@
 
 ---
 
-## 6. 遊戲計時器（GameTimer）
+## 6. UI 畫面（Screen）
+
+### ScreenTest
+
+| # | 測試名稱 | 情境 | 預期結果 |
+|---|----------|------|----------|
+| 1 | `startScreen_isShownOnLaunch` | 遊戲啟動 | 當前 Screen 為 `start` |
+| 2 | `startButton_transitionsToHud` | 點擊「開始遊戲」 | 切換至 `hud` Screen |
+| 3 | `hudScreen_showsCorrectInitialTime` | 進入 hud | 計時器顯示 `4:00` |
+| 4 | `hudScreen_updatesTimerEachSecond` | 經過 1 秒 | 計時器顯示 `3:59` |
+| 5 | `resultScreen_showsWinText_onPlayerWin` | 玩家獲勝 | result Screen 顯示 `YOU WIN` |
+| 6 | `resultScreen_showsLoseText_onNpcWin` | NPC 獲勝 | result Screen 顯示 `YOU LOSE` |
+| 7 | `retryButton_transitionsToStart` | 點擊「再玩一次」 | 切換至 `start` Screen |
+| 8 | `gameOver_transitionsToResult_onPlayerWin` | 核心方塊被摧毀 | 自動切換至 `result` Screen |
+| 9 | `gameOver_transitionsToResult_onNpcWin` | 時間到 | 自動切換至 `result` Screen |
+
+---
+
+## 7. 遊戲計時器（GameTimer）
 
 ### GameTimerTest
 
