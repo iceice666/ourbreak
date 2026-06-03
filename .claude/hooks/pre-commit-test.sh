@@ -37,13 +37,17 @@ else
   TEST_CMD="gradle test"
 fi
 
-# ── Run tests (must already be inside the nix dev shell) ─────────────────────
-# We do NOT enter `nix develop` here — that spawns a full shell and downloads
-# the entire toolchain on every commit. Run Claude Code from inside `nix develop`
-# or use direnv so the shell is already set up.
+# ── Run tests ────────────────────────────────────────────────────────────────
+# Prefer the project's wrapper (./gradlew) when present; otherwise fall back
+# to a system `gradle` on PATH. We do NOT auto-enter `nix develop` here —
+# that spawns a full shell and re-downloads the toolchain on every commit.
+# Make sure Gradle is reachable in your environment before committing:
+#   • nix / direnv users: enter `nix develop` (or let direnv do it).
+#   • Anyone else: ensure `./gradlew` exists or `gradle` is on PATH
+#     (e.g. SDKMAN, Homebrew, scoop/choco on Windows, system package).
 if ! command -v gradle &>/dev/null && [ ! -f "./gradlew" ]; then
-  echo "❌  Gradle not on PATH. Are you inside the dev shell?"
-  echo "    Run: nix develop"
+  echo "❌  Gradle not available. Need either ./gradlew in the repo"
+  echo "    or 'gradle' on PATH before commits can be tested."
   exit 2
 fi
 

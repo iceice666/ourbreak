@@ -78,11 +78,6 @@ ourcraft/
 2. **Never commit generated build artefacts** — `*.class`, `*.jar`, `build/`, `.gradle/` are gitignored.
 3. **Keep `flake.lock` committed** — it pins the exact toolchain; do not delete or regenerate it without good reason.
 4. **Run tests before marking a task done** — `./gradlew test` must pass (zero failures, zero errors).
-5. **One logical change per commit** — every commit message MUST follow [Conventional Commits](https://www.conventionalcommits.org/). Allowed types: `feat:`, `fix:`, `refactor:`, `docs:`, `build:`, `test:`, `chore:`, `perf:`, `ci:`, `style:`, `revert:`.
-6. **Every commit must include a devlog entry**, with one exception:
-   - **Required for**: `feat:`, `fix:`, `refactor:`, `docs:`, `build:` — the commit must add (or update) a file under `devlog/YYYYMMDD/hh-mm-ss-<slug>.md`. See `devlog/README.md` for the convention.
-   - **Optional for**: `chore:` (and other trivial types like `style:`, `ci:`) — skip the devlog unless the change is worth recording.
-   - The devlog entry lives in the same commit as the change it describes.
-7. **Past devlog entries are immutable** — never edit a previously committed entry. The only allowed change is updating `## Open questions / blockers` and `## Next session` to mark items resolved (`- [x]`) with a link to the entry/PR/issue that addressed them. See `devlog/README.md` § Immutability. Use `devlog/tools/open-items.sh` to list outstanding items.
-8. **Do not modify `flake.nix` / `flake.lock` unless explicitly asked** — toolchain changes are intentional.
-9. **Ask before adding dependencies** — new Gradle dependencies need justification; prefer the Java standard library and well-known libraries (Guava, Jackson, JUnit 5).
+5. **Follow the `commit` skill for all commits** — see `.claude/skills/commit/SKILL.md` (invocable via `/commit`). It covers Conventional Commits format, the per-commit devlog requirement, and devlog immutability. The pre-commit hooks under `.claude/hooks/` enforce both the test gate and the devlog gate.
+6. **Do not modify `flake.nix` / `flake.lock` unless explicitly asked** — toolchain changes are intentional.
+7. **Ask before adding dependencies** — new Gradle dependencies need justification; prefer the Java standard library and well-known libraries (Guava, Jackson, JUnit 5).
