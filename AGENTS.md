@@ -78,6 +78,10 @@ ourcraft/
 2. **Never commit generated build artefacts** — `*.class`, `*.jar`, `build/`, `.gradle/` are gitignored.
 3. **Keep `flake.lock` committed** — it pins the exact toolchain; do not delete or regenerate it without good reason.
 4. **Run tests before marking a task done** — `./gradlew test` must pass (zero failures, zero errors).
-5. **One logical change per commit** — follow Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`).
-6. **Do not modify `flake.nix` / `flake.lock` unless explicitly asked** — toolchain changes are intentional.
-7. **Ask before adding dependencies** — new Gradle dependencies need justification; prefer the Java standard library and well-known libraries (Guava, Jackson, JUnit 5).
+5. **One logical change per commit** — every commit message MUST follow [Conventional Commits](https://www.conventionalcommits.org/). Allowed types: `feat:`, `fix:`, `refactor:`, `docs:`, `build:`, `test:`, `chore:`, `perf:`, `ci:`, `style:`, `revert:`.
+6. **Every commit must include a devlog entry**, with one exception:
+   - **Required for**: `feat:`, `fix:`, `refactor:`, `docs:`, `build:` — the commit must add (or update) a file under `devlog/YYYYMMDD/hh-mm-ss-<slug>.md`. See `devlog/README.md` for the convention.
+   - **Optional for**: `chore:` (and other trivial types like `style:`, `ci:`) — skip the devlog unless the change is worth recording.
+   - The devlog entry lives in the same commit as the change it describes.
+7. **Do not modify `flake.nix` / `flake.lock` unless explicitly asked** — toolchain changes are intentional.
+8. **Ask before adding dependencies** — new Gradle dependencies need justification; prefer the Java standard library and well-known libraries (Guava, Jackson, JUnit 5).
