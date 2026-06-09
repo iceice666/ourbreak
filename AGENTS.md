@@ -72,6 +72,24 @@ ourcraft/
 
 ---
 
+## Current progress
+
+Full milestone breakdown: `design/milestones.md`. Critical path: M1 → M2 → M3 → M4 (first shippable game).
+
+| Milestone | Description | Status |
+|-----------|-------------|--------|
+| M0 | Foundation — jME3 + Zay-ES skeleton, ModelViewState | ✅ done |
+| M1 | Core game loop — RoundSystem, VictorySystem (headless) | ⬜ next |
+| M2 | Blocks & destruction — BlockComponent, WeaponSystem, counter-matrix (headless) | ⬜ |
+| M3 | NPC builder — NpcBuilderSystem, per-round scripts (headless) | ⬜ |
+| M4 | First-person playable — AppState machine, PlayerControlState, raycast wiring | ⬜ |
+| M5 | Block special effects — BlockEffectSystem, EffectComponent | ⬜ |
+| M6 | UI / HUD — HudSystem, Lemur menus (⚠️ needs dep approval) | ⬜ |
+| M7 | Balancing — fill all TBD constants, retune tests | ⬜ |
+| M8 | Stretch — playable builder, real 3D art (optional) | ⬜ |
+
+---
+
 ## Agent rules
 
 1. **Always work inside `nix develop`** — do not assume system Java or Gradle.
@@ -81,3 +99,4 @@ ourcraft/
 5. **Follow the `commit` skill for all commits** — see `.claude/skills/commit/SKILL.md` (invocable via `/commit`). It covers Conventional Commits format, the per-commit devlog requirement, and devlog immutability. The pre-commit hooks under `.claude/hooks/` enforce both the test gate and the devlog gate.
 6. **Do not modify `flake.nix` / `flake.lock` unless explicitly asked** — toolchain changes are intentional.
 7. **Ask before adding dependencies** — new Gradle dependencies need justification; prefer the Java standard library and well-known libraries (Guava, Jackson, JUnit 5).
+8. **Update the Current Progress table on every commit** — when a milestone completes, flip its status to `✅ done` and mark the next milestone `⬜ next`. Stage `AGENTS.md` in the same commit as the milestone work.
