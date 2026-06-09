@@ -22,10 +22,9 @@
 
 ```
 MainMenuState
-  └─→ CharacterSelectState
-        └─→ GameplayState
-              └─→ GameEndState
-                    └─→ MainMenuState（重玩）
+  └─→ GameplayState
+        └─→ GameEndState
+              └─→ MainMenuState（重玩）
 ```
 
 每個 State 自行管理 UI 與輸入綁定，互不干涉。
@@ -41,7 +40,7 @@ MainMenuState
 | `PositionComponent` | x, y, z | 已有，世界座標（整數格） |
 | `ModelComponent` | modelId | 已有，對應 3D 模型 ID |
 | `BlockComponent` | blockType, durability, maxDurability | 方塊類型與血量 |
-| `MascotComponent` | hp, maxHp | 吉祥物生命值 |
+| `MascotComponent` | — | 標記吉祥物 entity（無 HP，勝負由建築決定）|
 | `WeaponComponent` | weaponType | 玩家當前持有武器 |
 | `PhaseComponent` | phase（BUILD / ATTACK）| 當前回合階段 |
 | `RoundComponent` | currentRound, maxRounds | 回合狀態（singleton entity）|
@@ -58,7 +57,7 @@ MainMenuState
 | `BlockEffectSystem` | Coral 減速、Shell 反彈、Jellyfish 閃爍 |
 | `NpcBuilderSystem` | BUILD phase：腳本放方塊保護吉祥物 |
 | `RoundSystem` | BUILD/ATTACK 切換、1 分鐘計時器、phase 推進 |
-| `VictorySystem` | 吉祥物 HP=0 → 勝；4 rounds 結束 → 敗 |
+| `VictorySystem` | 任一攻擊階段所有方塊清空 → 立即勝；4 rounds 結束仍有方塊 → 敗 |
 | `HudSystem` | 更新 HUD 顯示 |
 
 ---
@@ -142,7 +141,8 @@ NPC 為純固定腳本，不使用 pathfinding。
        │    方塊用完 → 切換 ATTACK phase
        └─ ATTACK phase
             玩家 1 分鐘攻擊
-            時間到 OR 吉祥物死亡 → 進入下一 round / 結束
+            所有方塊清空 → 立即勝利（GameEndState）
+            時間到 → 進入下一 round（或第 4 round 結束 → 敗）
   └─ Round 2 → Round 3 → Round 4
        （重複）
 遊戲結束 → GameEndState
@@ -160,14 +160,14 @@ NPC 為純固定腳本，不使用 pathfinding。
 |------|------|
 | 左上 | 回合數（Round X / 4）|
 | 右上 | 剩餘時間倒數（ATTACK phase 顯示）|
-| 中上 | 吉祥物 HP 條 |
+| 中上 | 剩餘建築數量（ATTACK phase 顯示）|
 
 ### 其他畫面
 
 | 畫面 | 元素 |
 |------|------|
 | MainMenuState | Start Game、Exit |
-| CharacterSelectState | 選 Clawd 或 Openclaw |
+| MainMenuState | Start Game、Exit（玩家固定為 Openclaw）|
 | GameEndState | Win / Lose 文字、Restart |
 
 ---
@@ -182,5 +182,5 @@ NPC 為純固定腳本，不使用 pathfinding。
 | `WeaponTest` | 3 種武器命中傷害計算、剋制倍數 |
 | `BlockEffectTest` | Coral 減速觸發條件、Shell 反彈條件、Jellyfish 觸發條件 |
 | `RoundSystemTest` | BUILD→ATTACK 切換、計時器倒數、time clamp 到 0 |
-| `VictorySystemTest` | 吉祥物 HP=0 → PLAYER_WIN、4 rounds 結束 → PLAYER_LOSE |
+| `VictorySystemTest` | 所有方塊清空 → PLAYER_WIN（立即）、4 rounds 結束仍有方塊 → PLAYER_LOSE |
 | `NpcBuilderTest` | 各 round 放置正確方塊種類 |
