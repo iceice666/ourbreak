@@ -90,6 +90,27 @@ Full milestone breakdown: `design/milestones.md`. Critical path: M1 → M2 → M
 
 ---
 
+## Planning with OpenSpec (SDD)
+
+This project uses **OpenSpec** as its Software Design Document (SDD) framework. Prefer SDD-driven workflows over the built-in plan mode.
+
+- **When asked to plan or design anything**, default to OpenSpec skills (`/openspec-new-change`, `/opsx:new`, etc.) rather than entering built-in plan mode (`EnterPlanMode`).
+- **If currently in plan mode** and the user asks you to plan or execute work: suggest they exit plan mode and use OpenSpec SDD instead, or confirm they want to use the built-in plan mode.
+- **If an OpenSpec command/skill is invoked while in plan mode**: ask the user whether to exit plan mode before proceeding with OpenSpec.
+
+OpenSpec skill entry points:
+| Intent | Skill |
+|--------|-------|
+| Start a new change | `/openspec-new-change` or `/opsx:new` |
+| Explore / think through an idea | `/openspec-explore` or `/opsx:explore` |
+| Fast-forward all artifacts | `/openspec-ff-change` or `/opsx:ff` |
+| Continue a change | `/openspec-continue-change` or `/opsx:continue` |
+| Apply / implement tasks | `/openspec-apply-change` or `/opsx:apply` |
+| Verify implementation | `/openspec-verify-change` or `/opsx:verify` |
+| Archive a completed change | `/openspec-archive-change` or `/opsx:archive` |
+
+---
+
 ## Agent rules
 
 1. **Always work inside `nix develop`** — do not assume system Java or Gradle.
