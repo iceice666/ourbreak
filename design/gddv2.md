@@ -120,7 +120,7 @@ NPC 角色固定為建造者，行為簡單：
 - start game
 - select character（Clawd or Openclaw）
 >如果開發時間充裕，則可選擇Clawd陣營
-![[67805bb6-be90-43d9-8170-e4d4238b7168.jpg]]
+![[selectchar.jpg]]
 #### game status
 - Current Round（第幾 round）
 - 剩餘攻擊時間（攻擊階段顯示）
