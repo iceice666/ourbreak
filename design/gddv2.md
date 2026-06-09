@@ -1,6 +1,6 @@
 # 核心玩法概述
 遊戲名稱: ourcraft
-遊玩時間: 約 5 分鐘
+遊玩時間: 一局約 5 分鐘
 遊戲類型: 第一人稱動作遊戲
 ![[democoncept.png]]
 
@@ -128,3 +128,39 @@ NPC 角色固定為建造者，行為簡單：
 
 #### game end
 - show win or lose
+
+---
+
+## Mechanics
+
+#### 計時器
+| 項目 | 數值 |
+| ---- | ---- |
+| 攻擊階段時間限制 | 60 秒 |
+| 總 round 數 | 4 |
+
+#### 方塊數值
+| 方塊 | 耐久（下） | 特效範圍 / 數值 |
+| ---- | --------- | -------------- |
+| Sand Block | 1 | — |
+| Coral Block | 2 | 減速範圍：1.5 格；移動速度降低 `TBD`% |
+| Shell Block | 1 | 反彈傷害：`TBD` |
+| Rock Block | 4 | — |
+| Jellyfish Block | 1 | 閃爍持續時間：`TBD` 秒 |
+
+每 round NPC 可放方塊數量：`TBD`
+
+#### 武器數值
+| 武器 | 攻擊距離 | 範圍 | 基礎傷害 |
+| ---- | ------- | ---- | ------- |
+| Sword | 2 格 | 3x1 橫掃 | `TBD` |
+| Gun | 20 格 | 單體 | `TBD` |
+| Drone | — | 3x3 爆炸 | `TBD` |
+
+#### NPC 建造策略（各 round）
+| Round | 方塊組合 |
+| ----- | ------- |
+| 1 | 全 Sand Block |
+| 2 | Sand Block + Coral Block |
+| 3 | Rock Block + Shell Block |
+| 4 | Rock Block + Jellyfish Block |
