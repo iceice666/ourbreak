@@ -80,8 +80,8 @@ Full milestone breakdown: `design/milestones.md`. Critical path: M1 → M2 → M
 |-----------|-------------|--------|
 | M0 | Foundation — jME3 + Zay-ES skeleton, ModelViewState | ✅ done |
 | M1 | Core game loop — RoundSystem, VictorySystem (headless) | ✅ done |
-| M2 | Blocks & destruction — BlockComponent, WeaponSystem, counter-matrix (headless) | ⬜ next |
-| M3 | NPC builder — NpcBuilderSystem, per-round scripts (headless) | ⬜ |
+| M2 | Blocks & destruction — BlockComponent, WeaponSystem, counter-matrix (headless) | ✅ done |
+| M3 | NPC builder — NpcBuilderSystem, per-round scripts (headless) | ⬜ next |
 | M4 | First-person playable — AppState machine, PlayerControlState, raycast wiring | ⬜ |
 | M5 | Block special effects — BlockEffectSystem, EffectComponent | ⬜ |
 | M6 | UI / HUD — HudSystem, Lemur menus (⚠️ needs dep approval) | ⬜ |

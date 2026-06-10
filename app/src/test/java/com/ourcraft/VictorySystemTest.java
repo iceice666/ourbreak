@@ -13,6 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.ourcraft.ecs.components.BlockComponent.BlockType.ROCK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class VictorySystemTest {
@@ -53,7 +54,7 @@ class VictorySystemTest {
     @Test
     void noWinWhenBlocksRemainInAttackPhase() {
         EntityId block = ed.createEntity();
-        ed.setComponents(block, new BlockComponent());
+        ed.setComponents(block, new BlockComponent(ROCK));
         roundSystem.beginAttackPhase();
         victorySystem.update(1.0f);
         assertEquals(Result.IN_PROGRESS, result());
@@ -62,7 +63,7 @@ class VictorySystemTest {
     @Test
     void lossAtFinalRoundWhenTimerExpiredWithBlocksRemaining() {
         EntityId block = ed.createEntity();
-        ed.setComponents(block, new BlockComponent());
+        ed.setComponents(block, new BlockComponent(ROCK));
 
         // Jump to final round and expire the timer
         ed.setComponent(gsId, new RoundComponent(4, 4, 60.0));
@@ -77,7 +78,7 @@ class VictorySystemTest {
     @Test
     void noLossOnNonFinalRoundTimerExpiry() {
         EntityId block = ed.createEntity();
-        ed.setComponents(block, new BlockComponent());
+        ed.setComponents(block, new BlockComponent(ROCK));
 
         roundSystem.beginAttackPhase();
         roundSystem.update(61.0f); // advances to round 2 (BUILD)
@@ -98,7 +99,7 @@ class VictorySystemTest {
     @Test
     void idempotentLoss() {
         EntityId block = ed.createEntity();
-        ed.setComponents(block, new BlockComponent());
+        ed.setComponents(block, new BlockComponent(ROCK));
 
         ed.setComponent(gsId, new RoundComponent(4, 4, 60.0));
         roundSystem.beginAttackPhase();
