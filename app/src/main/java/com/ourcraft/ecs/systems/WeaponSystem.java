@@ -2,10 +2,13 @@ package com.ourcraft.ecs.systems;
 
 import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.BlockComponent.BlockType;
+import com.ourcraft.ecs.components.GameResultComponent;
+import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.ourcraft.ecs.components.PhaseComponent;
 import com.ourcraft.ecs.components.PhaseComponent.Phase;
 import com.ourcraft.ecs.components.WeaponComponent;
 import com.ourcraft.ecs.components.WeaponComponent.WeaponType;
+import com.simsilica.es.EntityComponent;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 
@@ -37,8 +40,9 @@ public class WeaponSystem {
             throw new IllegalStateException("attacking player must have a WeaponComponent");
         }
 
-        PhaseComponent phase = ed.getComponent(gameStateId, PhaseComponent.class);
-        if (phase == null || phase.phase() != Phase.ATTACK) {
+        PhaseComponent phase = requireGameStateComponent(PhaseComponent.class);
+        GameResultComponent result = requireGameStateComponent(GameResultComponent.class);
+        if (result.result() != Result.IN_PROGRESS || phase.phase() != Phase.ATTACK) {
             return;
         }
 
@@ -60,6 +64,15 @@ public class WeaponSystem {
                 ed.setComponent(targetId, damagedBlock);
             }
         }
+    }
+
+    private <T extends EntityComponent> T requireGameStateComponent(Class<T> componentType) {
+        T component = ed.getComponent(gameStateId, componentType);
+        if (component == null) {
+            throw new IllegalStateException(
+                    "game-state entity must have a " + componentType.getSimpleName());
+        }
+        return component;
     }
 
     private float multiplier(WeaponType weaponType, BlockType blockType) {

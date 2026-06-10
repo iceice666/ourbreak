@@ -76,6 +76,16 @@ class VictorySystemTest {
     }
 
     @Test
+    void blockClearanceWinsAtSimultaneousFinalRoundExpiry() {
+        roundSystem.beginAttackPhase();
+        ed.setComponent(gsId, new RoundComponent(4, 4, 0.0));
+
+        victorySystem.update(0.0f);
+
+        assertEquals(Result.WIN, result());
+    }
+
+    @Test
     void noLossOnNonFinalRoundTimerExpiry() {
         EntityId block = ed.createEntity();
         ed.setComponents(block, new BlockComponent(ROCK));

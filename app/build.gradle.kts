@@ -9,9 +9,10 @@ repositories {
 dependencies {
     implementation(libs.bundles.jme3)
     implementation(libs.zay.es)
+    implementation(libs.guava)
 
     testImplementation(libs.junit.jupiter)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 java {

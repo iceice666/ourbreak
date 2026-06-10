@@ -2,19 +2,27 @@ package com.ourcraft;
 
 import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.BlockComponent.BlockType;
+import com.ourcraft.ecs.components.GameResultComponent;
+import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.ourcraft.ecs.components.MascotComponent;
 import com.ourcraft.ecs.components.PhaseComponent;
 import com.ourcraft.ecs.components.PhaseComponent.Phase;
 import com.ourcraft.ecs.components.WeaponComponent;
 import com.ourcraft.ecs.components.WeaponComponent.WeaponType;
 import com.ourcraft.ecs.systems.WeaponSystem;
+import com.simsilica.es.EntityComponent;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 import com.simsilica.es.base.DefaultEntityData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.ourcraft.ecs.components.BlockComponent.BlockType.CORAL;
 import static com.ourcraft.ecs.components.BlockComponent.BlockType.JELLYFISH;
@@ -41,7 +49,9 @@ class WeaponTest {
     void setUp() {
         ed = new DefaultEntityData();
         gameStateId = ed.createEntity();
-        ed.setComponent(gameStateId, new PhaseComponent(Phase.ATTACK));
+        ed.setComponents(gameStateId,
+                new PhaseComponent(Phase.ATTACK),
+                new GameResultComponent(Result.IN_PROGRESS));
         system = new WeaponSystem(ed, gameStateId);
     }
 
@@ -77,6 +87,18 @@ class WeaponTest {
         assertEquals(4.0f, block(block).durability());
     }
 
+    @ParameterizedTest
+    @EnumSource(value = Result.class, names = {"WIN", "LOSS"})
+    void completedGameDoesNotApplyDamage(Result completedResult) {
+        EntityId player = createPlayer(SWORD);
+        EntityId block = createBlock(ROCK);
+        ed.setComponent(gameStateId, new GameResultComponent(completedResult));
+
+        system.attack(player, List.of(block));
+
+        assertEquals(4.0f, block(block).durability());
+    }
+
     @Test
     void playerWithoutWeaponIsRejected() {
         EntityId player = ed.createEntity();
@@ -106,6 +128,48 @@ class WeaponTest {
         system.attack(player, List.of(block, block, block));
 
         assertEquals(3.0f, block(block).durability());
+    }
+
+    @Test
+    void emptyTargetCollectionIsNoOp() {
+        EntityId player = createPlayer(SWORD);
+        EntityId block = createBlock(ROCK);
+
+        system.attack(player, List.of());
+
+        assertEquals(4.0f, block(block).durability());
+    }
+
+    @Test
+    void nullTargetIdsAreIgnored() {
+        EntityId player = createPlayer(SWORD);
+        EntityId block = createBlock(ROCK);
+
+        system.attack(player, Arrays.asList(null, block, null));
+
+        assertEquals(3.0f, block(block).durability());
+    }
+
+    @Test
+    void nullTargetCollectionIsRejectedBeforeDamage() {
+        EntityId player = createPlayer(SWORD);
+        EntityId block = createBlock(ROCK);
+
+        assertThrows(NullPointerException.class, () -> system.attack(player, null));
+        assertEquals(4.0f, block(block).durability());
+    }
+
+    @ParameterizedTest
+    @MethodSource("requiredGameStateComponentTypes")
+    void missingGameStateEligibilityComponentIsRejectedBeforeDamage(
+            Class<? extends EntityComponent> componentType
+    ) {
+        EntityId player = createPlayer(SWORD);
+        EntityId block = createBlock(ROCK);
+        ed.removeComponent(gameStateId, componentType);
+
+        assertThrows(IllegalStateException.class, () -> system.attack(player, List.of(block)));
+        assertEquals(4.0f, block(block).durability());
     }
 
     @Test
@@ -152,6 +216,10 @@ class WeaponTest {
         system.attack(player, List.of(target));
 
         assertEquals(10.0f - multiplier, block(target).durability());
+    }
+
+    private static Stream<Class<? extends EntityComponent>> requiredGameStateComponentTypes() {
+        return Stream.of(PhaseComponent.class, GameResultComponent.class);
     }
 
     private EntityId createPlayer(WeaponType weaponType) {

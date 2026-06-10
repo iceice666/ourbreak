@@ -10,6 +10,7 @@ import com.ourcraft.ecs.components.RoundComponent;
 import com.ourcraft.ecs.systems.NpcBuilderSystem;
 import com.ourcraft.ecs.systems.RoundSystem;
 import com.simsilica.es.Entity;
+import com.simsilica.es.EntityComponent;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 import com.simsilica.es.EntitySet;
@@ -17,9 +18,12 @@ import com.simsilica.es.base.DefaultEntityData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import static com.ourcraft.ecs.components.BlockComponent.BlockType.CORAL;
 import static com.ourcraft.ecs.components.BlockComponent.BlockType.JELLYFISH;
@@ -34,6 +38,7 @@ import static com.ourcraft.ecs.systems.NpcBuilderSystem.BLOCKS_PER_ROUND;
 import static com.ourcraft.ecs.systems.RoundSystem.ATTACK_DURATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NpcBuilderTest {
@@ -149,6 +154,24 @@ class NpcBuilderTest {
     }
 
     @Test
+    void fullyOccupiedFirstRingPlacesNextBlockAtSecondRingFrontCenter() {
+        List<PositionComponent> firstRing = List.of(
+                new PositionComponent(0.0f, 0.0f, 1.0f),
+                new PositionComponent(-1.0f, 0.0f, 0.0f),
+                new PositionComponent(1.0f, 0.0f, 0.0f),
+                new PositionComponent(-1.0f, 0.0f, 1.0f),
+                new PositionComponent(1.0f, 0.0f, 1.0f),
+                new PositionComponent(-1.0f, 0.0f, -1.0f),
+                new PositionComponent(1.0f, 0.0f, -1.0f),
+                new PositionComponent(0.0f, 0.0f, -1.0f));
+        firstRing.forEach(position -> createBlock(SHELL, position));
+
+        builder.update(0.0f);
+
+        assertEquals(SAND, blockAt(new PositionComponent(0.0f, 0.0f, 2.0f)).block().blockType());
+    }
+
+    @Test
     void destroyedPriorityPositionIsRefilledFirstInLaterRound() {
         completeBuild();
         PositionComponent front = new PositionComponent(0.0f, 0.0f, 1.0f);
@@ -220,10 +243,44 @@ class NpcBuilderTest {
         assertEquals(BUILD, phase());
     }
 
+    @Test
+    void missingMascotPositionIsRejectedBeforeBlockCreation() {
+        ed.removeComponent(mascotId, PositionComponent.class);
+
+        assertThrows(IllegalStateException.class, () -> builder.update(0.0f));
+        assertEquals(0, placedBlocks().size());
+    }
+
+    @ParameterizedTest
+    @MethodSource("requiredGameStateComponentTypes")
+    void missingRequiredGameStateIsRejectedBeforeBlockCreation(
+            Class<? extends EntityComponent> componentType
+    ) {
+        ed.removeComponent(gameStateId, componentType);
+
+        assertThrows(IllegalStateException.class, () -> builder.update(0.0f));
+        assertEquals(0, placedBlocks().size());
+    }
+
+    @Test
+    void unsupportedRoundIsRejectedBeforeBlockCreation() {
+        ed.setComponent(gameStateId, new RoundComponent(5, 5, ATTACK_DURATION));
+
+        assertThrows(IllegalStateException.class, () -> builder.update(0.0f));
+        assertEquals(0, placedBlocks().size());
+    }
+
     private void completeBuild() {
         for (int i = 0; i < BLOCKS_PER_ROUND; i++) {
             builder.update(0.0f);
         }
+    }
+
+    private static Stream<Class<? extends EntityComponent>> requiredGameStateComponentTypes() {
+        return Stream.of(
+                RoundComponent.class,
+                PhaseComponent.class,
+                GameResultComponent.class);
     }
 
     private void completeAllRounds() {

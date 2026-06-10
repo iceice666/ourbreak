@@ -10,6 +10,7 @@ import com.ourcraft.ecs.components.PhaseComponent.Phase;
 import com.ourcraft.ecs.components.PositionComponent;
 import com.ourcraft.ecs.components.RoundComponent;
 import com.simsilica.es.Entity;
+import com.simsilica.es.EntityComponent;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 import com.simsilica.es.EntitySet;
@@ -42,13 +43,17 @@ public class NpcBuilderSystem {
 
     public void update(float tpf) {
         EntityId gameStateId = roundSystem.getGameStateId();
-        GameResultComponent result = ed.getComponent(gameStateId, GameResultComponent.class);
-        PhaseComponent phase = ed.getComponent(gameStateId, PhaseComponent.class);
+        if (gameStateId == null) {
+            throw new IllegalStateException("round system must be initialized");
+        }
+
+        RoundComponent round = requireGameStateComponent(gameStateId, RoundComponent.class);
+        PhaseComponent phase = requireGameStateComponent(gameStateId, PhaseComponent.class);
+        GameResultComponent result = requireGameStateComponent(gameStateId, GameResultComponent.class);
         if (result.result() != Result.IN_PROGRESS || phase.phase() != Phase.BUILD) {
             return;
         }
 
-        RoundComponent round = ed.getComponent(gameStateId, RoundComponent.class);
         if (round.currentRound() != activeRound) {
             activeRound = round.currentRound();
             placementsThisRound = 0;
@@ -57,6 +62,7 @@ public class NpcBuilderSystem {
             return;
         }
 
+        List<BlockType> script = blockScript(activeRound);
         positionedBlocks.applyChanges();
         PositionComponent mascotPosition = ed.getComponent(mascotId, PositionComponent.class);
         if (mascotPosition == null) {
@@ -64,7 +70,6 @@ public class NpcBuilderSystem {
         }
 
         PositionComponent placement = findFirstAvailablePosition(mascotPosition);
-        List<BlockType> script = blockScript(activeRound);
         BlockType blockType = script.get(placementsThisRound % script.size());
 
         EntityId blockId = ed.createEntity();
@@ -81,6 +86,18 @@ public class NpcBuilderSystem {
 
     public void close() {
         positionedBlocks.release();
+    }
+
+    private <T extends EntityComponent> T requireGameStateComponent(
+            EntityId gameStateId,
+            Class<T> componentType
+    ) {
+        T component = ed.getComponent(gameStateId, componentType);
+        if (component == null) {
+            throw new IllegalStateException(
+                    "game-state entity must have a " + componentType.getSimpleName());
+        }
+        return component;
     }
 
     private PositionComponent findFirstAvailablePosition(PositionComponent mascotPosition) {

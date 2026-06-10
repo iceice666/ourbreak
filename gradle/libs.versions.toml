@@ -1,10 +1,12 @@
 [versions]
-junit-jupiter = "6.0.1"
+junit-jupiter = "6.1.0"
 jme3 = "3.9.0-stable"
 zay-es = "1.6.0"
+guava = "33.6.0-jre"
 
 [libraries]
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-jupiter" }
 
 jme3-core = { module = "org.jmonkeyengine:jme3-core", version.ref = "jme3" }
 jme3-desktop = { module = "org.jmonkeyengine:jme3-desktop", version.ref = "jme3" }
@@ -13,6 +15,7 @@ jme3-plugins = { module = "org.jmonkeyengine:jme3-plugins", version.ref = "jme3"
 jme3-effects = { module = "org.jmonkeyengine:jme3-effects", version.ref = "jme3" }
 
 zay-es = { module = "com.simsilica:zay-es", version.ref = "zay-es" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 
 [bundles]
 jme3 = ["jme3-core", "jme3-desktop", "jme3-lwjgl3", "jme3-plugins", "jme3-effects"]

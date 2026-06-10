@@ -5,6 +5,12 @@ import com.simsilica.es.EntityComponent;
 
 public record PositionComponent(float x, float y, float z) implements EntityComponent {
 
+    public PositionComponent {
+        if (!Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) {
+            throw new IllegalArgumentException("position coordinates must be finite");
+        }
+    }
+
     public static PositionComponent of(Vector3f v) {
         return new PositionComponent(v.x, v.y, v.z);
     }
