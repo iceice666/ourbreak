@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
@@ -180,7 +181,7 @@ class NpcBuilderTest {
 
         builder.update(0.0f);
 
-        PlacedBlock newest = placedBlocks().get(placedBlocks().size() - 1);
+        PlacedBlock newest = placedBlocks().getLast();
         assertEquals(front, newest.position());
         assertEquals(SAND, newest.block().blockType());
     }
@@ -336,7 +337,7 @@ class NpcBuilderTest {
                 ModelComponent.class);
         try {
             return blocks.stream()
-                    .sorted((left, right) -> left.getId().compareTo(right.getId()))
+                    .sorted(Comparator.comparing(Entity::getId))
                     .map(this::placedBlock)
                     .toList();
         } finally {
