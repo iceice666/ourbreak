@@ -82,8 +82,8 @@ Full milestone breakdown: `design/milestones.md`. Critical path: M1 → M2 → M
 | M1 | Core game loop — RoundSystem, VictorySystem (headless) | ✅ done |
 | M2 | Blocks & destruction — BlockComponent, WeaponSystem, counter-matrix (headless) | ✅ done |
 | M3 | NPC builder — NpcBuilderSystem, per-round scripts (headless) | ✅ done |
-| M4 | First-person playable — AppState machine, PlayerControlState, raycast wiring | ⬜ next |
-| M5 | Block special effects — BlockEffectSystem, EffectComponent | ⬜ |
+| M4 | First-person playable — AppState machine, PlayerControlState, raycast wiring | ✅ done |
+| M5 | Block special effects — BlockEffectSystem, EffectComponent | ⬜ next |
 | M6 | UI / HUD — HudSystem, Lemur menus (⚠️ needs dep approval) | ⬜ |
 | M7 | Balancing — fill all TBD constants, retune tests | ⬜ |
 | M8 | Stretch — playable builder, real 3D art (optional) | ⬜ |

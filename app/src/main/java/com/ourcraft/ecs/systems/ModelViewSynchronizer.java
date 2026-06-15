@@ -17,6 +17,9 @@ import java.util.Set;
 
 final class ModelViewSynchronizer {
 
+    /** Spatial user-data key holding the source entity's raw id, for ray-pick resolution. */
+    static final String ENTITY_ID_USER_DATA = "entityId";
+
     private final Node sceneRoot;
     private final SpatialFactory spatialFactory;
     private final EntitySet entities;
@@ -79,6 +82,7 @@ final class ModelViewSynchronizer {
             Spatial spatial = Objects.requireNonNull(
                     spatialFactory.create(model),
                     "spatialFactory returned null");
+            spatial.setUserData(ENTITY_ID_USER_DATA, entity.getId().getId());
             spatial.setLocalTranslation(position.x(), position.y(), position.z());
             sceneRoot.attachChild(spatial);
             tracked = new TrackedSpatial(model, spatial);
