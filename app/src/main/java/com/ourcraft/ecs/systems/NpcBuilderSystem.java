@@ -2,6 +2,7 @@ package com.ourcraft.ecs.systems;
 
 import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.BlockComponent.BlockType;
+import com.ourcraft.ecs.components.EffectComponent;
 import com.ourcraft.ecs.components.GameResultComponent;
 import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.ourcraft.ecs.components.ModelComponent;
@@ -77,6 +78,8 @@ public class NpcBuilderSystem {
                 placement,
                 new BlockComponent(blockType),
                 new ModelComponent(modelId(blockType)));
+        EffectComponent.forBlockType(blockType)
+                .ifPresent(effect -> ed.setComponent(blockId, effect));
 
         placementsThisRound++;
         if (placementsThisRound == BLOCKS_PER_ROUND) {

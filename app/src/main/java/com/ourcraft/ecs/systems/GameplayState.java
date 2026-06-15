@@ -7,6 +7,7 @@ import com.jme3.math.Vector3f;
 import com.ourcraft.ecs.components.GameResultComponent;
 import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.ourcraft.ecs.components.MascotComponent;
+import com.ourcraft.ecs.components.PlayerHealthComponent;
 import com.ourcraft.ecs.components.PositionComponent;
 import com.ourcraft.ecs.components.WeaponComponent;
 import com.ourcraft.ecs.components.WeaponComponent.WeaponType;
@@ -21,11 +22,15 @@ import com.simsilica.es.base.DefaultEntityData;
  */
 public class GameplayState extends BaseAppState {
 
+    /** Player starting hit points. Placeholder — tuned in M7. */
+    private static final float PLAYER_MAX_HEALTH = 10f;
+
     private EntityData ed;
     private ModelViewState modelView;
     private RoundSystem roundSystem;
     private VictorySystem victorySystem;
     private NpcBuilderSystem npcBuilder;
+    private BlockEffectSystem blockEffect;
     private PlayerControlState playerControl;
 
     private EntityId gameStateId;
@@ -49,12 +54,14 @@ public class GameplayState extends BaseAppState {
         EntityId playerId = ed.createEntity();
         ed.setComponents(playerId,
                 new WeaponComponent(WeaponType.SWORD),
-                new PositionComponent(0f, 0f, 8f));
+                new PositionComponent(0f, 0f, 8f),
+                new PlayerHealthComponent(PLAYER_MAX_HEALTH));
 
         victorySystem = new VictorySystem(ed, gameStateId);
         npcBuilder = new NpcBuilderSystem(ed, roundSystem, mascotId);
+        blockEffect = new BlockEffectSystem(ed, playerId, gameStateId);
 
-        playerControl = new PlayerControlState(ed, playerId, gameStateId);
+        playerControl = new PlayerControlState(ed, playerId, gameStateId, blockEffect);
         getStateManager().attach(playerControl);
 
         app.getCamera().setLocation(new Vector3f(0f, 1.5f, 8f));
@@ -67,6 +74,7 @@ public class GameplayState extends BaseAppState {
         getStateManager().detach(modelView);
         victorySystem.close();
         npcBuilder.close();
+        blockEffect.close();
         ed.close();
     }
 
@@ -87,6 +95,7 @@ public class GameplayState extends BaseAppState {
         npcBuilder.update(tpf);
         roundSystem.update(tpf);
         victorySystem.update(tpf);
+        blockEffect.update(tpf);
 
         Result result = ed.getComponent(gameStateId, GameResultComponent.class).result();
         if (result != Result.IN_PROGRESS) {
