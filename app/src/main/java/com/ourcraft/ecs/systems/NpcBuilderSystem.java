@@ -25,11 +25,10 @@ import java.util.Set;
 
 public class NpcBuilderSystem {
 
-    // Per-round block quota (M7 balance): escalates so later rounds are a real time-pressured wall.
-    public static final int ROUND_1_BLOCKS = 16;
-    public static final int ROUND_2_BLOCKS = 24;
-    public static final int ROUND_3_BLOCKS = 32;
-    public static final int ROUND_4_BLOCKS = 40;
+    // Endless escalation: the wall grows each round, then plateaus at a 60 s-survivable ceiling.
+    public static final int BASE_BLOCKS = 16;
+    public static final int BLOCKS_STEP = 8;
+    public static final int MAX_BLOCKS = 48;
 
     private final EntityData ed;
     private final RoundSystem roundSystem;
@@ -163,13 +162,10 @@ public class NpcBuilderSystem {
     }
 
     public static int blocksForRound(int round) {
-        return switch (round) {
-            case 1 -> ROUND_1_BLOCKS;
-            case 2 -> ROUND_2_BLOCKS;
-            case 3 -> ROUND_3_BLOCKS;
-            case 4 -> ROUND_4_BLOCKS;
-            default -> throw new IllegalStateException("no block quota for round " + round);
-        };
+        if (round < 1) {
+            throw new IllegalStateException("no block quota for round " + round);
+        }
+        return Math.min(BASE_BLOCKS + (round - 1) * BLOCKS_STEP, MAX_BLOCKS);
     }
 
     private List<BlockType> blockScript(int round) {
@@ -178,7 +174,13 @@ public class NpcBuilderSystem {
             case 2 -> List.of(BlockType.SAND, BlockType.CORAL);
             case 3 -> List.of(BlockType.ROCK, BlockType.SHELL);
             case 4 -> List.of(BlockType.ROCK, BlockType.JELLYFISH);
-            default -> throw new IllegalStateException("no NPC build script for round " + round);
+            default -> {
+                if (round < 1) {
+                    throw new IllegalStateException("no NPC build script for round " + round);
+                }
+                // Round 5+: the full gauntlet — tanky rock plus every effect block.
+                yield List.of(BlockType.ROCK, BlockType.SHELL, BlockType.JELLYFISH, BlockType.CORAL);
+            }
         };
     }
 

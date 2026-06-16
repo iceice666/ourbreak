@@ -43,7 +43,7 @@ MainMenuState
 | `MascotComponent` | — | 標記吉祥物 entity（無 HP，勝負由建築決定）|
 | `WeaponComponent` | weaponType | 玩家當前持有武器 |
 | `PhaseComponent` | phase（BUILD / ATTACK）| 當前回合階段 |
-| `RoundComponent` | currentRound, maxRounds | 回合狀態（singleton entity）|
+| `RoundComponent` | currentRound, remainingSeconds | 回合狀態（singleton entity，無 max 上限）|
 | `EffectComponent` | effectType | 方塊特效標記 |
 | `PlayerComponent` | — | 標記玩家 entity |
 
@@ -56,8 +56,8 @@ MainMenuState
 | `WeaponSystem` | 攻擊輸入 → raycast 命中判定 → 扣血 |
 | `BlockEffectSystem` | Coral 減速、Shell 反彈、Jellyfish 閃爍 |
 | `NpcBuilderSystem` | BUILD phase：腳本放方塊保護吉祥物 |
-| `RoundSystem` | BUILD/ATTACK 切換、1 分鐘計時器、phase 推進 |
-| `VictorySystem` | 任一攻擊階段所有方塊清空 → 立即勝；4 rounds 結束仍有方塊 → 敗 |
+| `RoundSystem` | BUILD/ATTACK 切換、1 分鐘計時器、`advanceRound()`（計時器不自動進回合）|
+| `VictorySystem` | 生存：攻擊階段方塊清空 → 進下一回合；計時器歸零仍有方塊 → Game Over（任一回合）|
 | `HudSystem` | 更新 HUD 顯示 |
 
 ---
@@ -134,29 +134,32 @@ NPC 為純固定腳本，不使用 pathfinding。
 | 2 | SAND + CORAL |
 | 3 | ROCK + SHELL |
 | 4 | ROCK + JELLYFISH |
+| 5+ | ROCK + SHELL + JELLYFISH + CORAL（全餐）|
 
-`NpcBuilderSystem` 在 BUILD phase 被 attach，方塊放完後 detach，觸發切換至 ATTACK phase。
+每 round 方塊數 = `min(16 + (round-1)×8, 48)`。`NpcBuilderSystem` 在 BUILD phase 放完方塊後觸發切換至 ATTACK phase。
 
 ---
 
 ## 8. Round 管理
 
+無限生存模式：
+
 ```
 遊戲開始（GameplayState attach）
-  └─ Round 1
+  └─ Round N（N 從 1 起，無上限）
        ├─ BUILD phase
-       │    NpcBuilderSystem 執行腳本放方塊
-       │    方塊用完 → 切換 ATTACK phase
+       │    NpcBuilderSystem 依公式放方塊（數量/組成隨 N 遞增）
+       │    方塊放完 → 切換 ATTACK phase
        └─ ATTACK phase
             玩家 1 分鐘攻擊
-            所有方塊清空 → 立即勝利（GameEndState）
-            時間到 → 進入下一 round（或第 4 round 結束 → 敗）
-  └─ Round 2 → Round 3 → Round 4
-       （重複）
-遊戲結束 → GameEndState
+            清光所有方塊 → 存活 → RoundSystem.advanceRound() → Round N+1（更難）
+            計時器歸零仍有方塊 → Game Over（LOSS）
+  └─ 重複，直到 Game Over
+遊戲結束 → GameEndState（顯示 Reached Round N）
 ```
 
-`RoundSystem` 持有一個計時器（float remainingSeconds），每幀 `update(tpf)` 倒數。
+`RoundSystem` 持有計時器（remainingSeconds），每幀 `update(tpf)` 倒數但**不再自動進回合**；
+回合推進改由 `VictorySystem`（生存）在方塊清空時呼叫 `advanceRound()`，逾時仍有方塊則寫入 LOSS。
 
 ---
 
@@ -166,7 +169,7 @@ NPC 為純固定腳本，不使用 pathfinding。
 
 | 位置 | 元素 |
 |------|------|
-| 左上 | 回合數（Round X / 4）|
+| 左上 | 回合數（Round X，無上限）|
 | 右上 | 剩餘時間倒數（ATTACK phase 顯示）|
 | 中上 | 剩餘建築數量（ATTACK phase 顯示）|
 
@@ -190,5 +193,5 @@ NPC 為純固定腳本，不使用 pathfinding。
 | `WeaponTest` | 3 種武器命中傷害計算、剋制倍數 |
 | `BlockEffectTest` | Coral 減速觸發條件、Shell 反彈條件、Jellyfish 觸發條件 |
 | `RoundSystemTest` | BUILD→ATTACK 切換、計時器倒數、time clamp 到 0 |
-| `VictorySystemTest` | 所有方塊清空 → PLAYER_WIN（立即）、4 rounds 結束仍有方塊 → PLAYER_LOSE |
+| `VictorySystemTest` | 方塊清空 → 進下一回合（存活）、計時器歸零仍有方塊 → Game Over（任一回合）|
 | `NpcBuilderTest` | 各 round 放置正確方塊種類 |

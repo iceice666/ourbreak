@@ -16,8 +16,8 @@ class HudTextTest {
 
     @Test
     void roundText() {
-        assertEquals("Round 1 / 4", HudText.round(1, 4));
-        assertEquals("Round 4 / 4", HudText.round(4, 4));
+        assertEquals("Round 1", HudText.round(1));
+        assertEquals("Round 12", HudText.round(12));
     }
 
     @Test

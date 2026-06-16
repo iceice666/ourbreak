@@ -9,6 +9,7 @@ import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.ourcraft.ecs.components.MascotComponent;
 import com.ourcraft.ecs.components.PlayerHealthComponent;
 import com.ourcraft.ecs.components.PositionComponent;
+import com.ourcraft.ecs.components.RoundComponent;
 import com.ourcraft.ecs.components.WeaponComponent;
 import com.ourcraft.ecs.components.WeaponComponent.WeaponType;
 import com.simsilica.es.EntityData;
@@ -66,7 +67,7 @@ public class GameplayState extends BaseAppState {
                 new PositionComponent(0f, 0f, 8f),
                 new PlayerHealthComponent(PLAYER_MAX_HEALTH));
 
-        victorySystem = new VictorySystem(ed, gameStateId);
+        victorySystem = new VictorySystem(ed, gameStateId, roundSystem);
         npcBuilder = new NpcBuilderSystem(ed, roundSystem, mascotId);
         blockEffect = new BlockEffectSystem(ed, playerId, gameStateId);
 
@@ -115,8 +116,9 @@ public class GameplayState extends BaseAppState {
         Result result = ed.getComponent(gameStateId, GameResultComponent.class).result();
         if (result != Result.IN_PROGRESS) {
             resolved = true;
+            int roundReached = ed.getComponent(gameStateId, RoundComponent.class).currentRound();
             getStateManager().detach(this);
-            getStateManager().attach(new GameEndState(result));
+            getStateManager().attach(new GameEndState(roundReached));
         }
     }
 }

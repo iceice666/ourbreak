@@ -11,6 +11,12 @@ import com.simsilica.es.EntityId;
 
 import java.util.Objects;
 
+/**
+ * Owns the game-state entity's round/phase/timer in endless survival. The round number is unbounded:
+ * the attack timer only ticks down (it does not advance the round), the round advances when a wall is
+ * survived ({@link #advanceRound()}), and a timeout with blocks remaining is a game over handled by the
+ * survival ({@code VictorySystem}) logic.
+ */
 public class RoundSystem {
 
     public static final double ATTACK_DURATION = 60.0;
@@ -28,7 +34,7 @@ public class RoundSystem {
         }
         gameStateId = ed.createEntity();
         ed.setComponents(gameStateId,
-                new RoundComponent(1, 4, ATTACK_DURATION),
+                new RoundComponent(1, ATTACK_DURATION),
                 new PhaseComponent(Phase.BUILD),
                 new GameResultComponent(Result.IN_PROGRESS));
     }
@@ -48,7 +54,20 @@ public class RoundSystem {
         RoundComponent round = gameState.round();
         ed.setComponents(gameStateId,
                 new PhaseComponent(Phase.ATTACK),
-                new RoundComponent(round.currentRound(), round.maxRounds(), ATTACK_DURATION));
+                new RoundComponent(round.currentRound(), ATTACK_DURATION));
+    }
+
+    /** Advances to the next (harder) round after the current wall is survived. Unbounded. */
+    public void advanceRound() {
+        GameState gameState = requireGameState();
+        if (gameState.result().result() != Result.IN_PROGRESS) {
+            return;
+        }
+
+        RoundComponent round = gameState.round();
+        ed.setComponents(gameStateId,
+                new RoundComponent(round.currentRound() + 1, ATTACK_DURATION),
+                new PhaseComponent(Phase.BUILD));
     }
 
     public void update(float tpf) {
@@ -60,22 +79,13 @@ public class RoundSystem {
         if (gameState.result().result() != Result.IN_PROGRESS) {
             return;
         }
-
         if (gameState.phase().phase() != Phase.ATTACK) {
             return;
         }
 
         RoundComponent round = gameState.round();
         double newRemaining = Math.max(0.0, round.remainingSeconds() - tpf);
-
-        if (newRemaining <= 0.0 && round.currentRound() < round.maxRounds()) {
-            ed.setComponents(gameStateId,
-                    new RoundComponent(round.currentRound() + 1, round.maxRounds(), ATTACK_DURATION),
-                    new PhaseComponent(Phase.BUILD));
-        } else {
-            ed.setComponent(gameStateId,
-                    new RoundComponent(round.currentRound(), round.maxRounds(), newRemaining));
-        }
+        ed.setComponent(gameStateId, new RoundComponent(round.currentRound(), newRemaining));
     }
 
     private GameState requireGameState() {

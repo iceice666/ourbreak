@@ -8,22 +8,19 @@ import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.scene.Node;
-import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.simsilica.lemur.Button;
 import com.simsilica.lemur.Container;
 import com.simsilica.lemur.Label;
 
-import java.util.Objects;
-
 /**
- * End-of-match screen built with Lemur: shows the win/loss outcome and a clickable Restart button
- * (Enter kept as a shortcut) that returns to the main menu. Replaces the M4 placeholder BitmapText.
+ * Game-over screen (endless survival) built with Lemur: shows how far the run got and a clickable
+ * Restart button (Enter kept as a shortcut) that returns to the main menu.
  */
 public class GameEndState extends BaseAppState {
 
     private static final String RESTART = "ourcraft.end.restart";
 
-    private final Result result;
+    private final int roundReached;
 
     private SimpleApplication simpleApp;
     private InputManager inputManager;
@@ -36,11 +33,11 @@ public class GameEndState extends BaseAppState {
         }
     };
 
-    public GameEndState(Result result) {
-        this.result = Objects.requireNonNull(result, "result");
-        if (result == Result.IN_PROGRESS) {
-            throw new IllegalArgumentException("end screen requires a decided result");
+    public GameEndState(int roundReached) {
+        if (roundReached < 1) {
+            throw new IllegalArgumentException("roundReached must be at least 1");
         }
+        this.roundReached = roundReached;
     }
 
     @Override
@@ -50,8 +47,9 @@ public class GameEndState extends BaseAppState {
         this.guiNode = simpleApp.getGuiNode();
 
         panel = new Container();
-        Label outcome = panel.addChild(new Label(result == Result.WIN ? "YOU WIN" : "YOU LOSE"));
-        outcome.setFontSize(36f);
+        Label title = panel.addChild(new Label("GAME OVER"));
+        title.setFontSize(36f);
+        panel.addChild(new Label("Reached Round " + roundReached));
         panel.addChild(new Button("Restart")).addClickCommands(src -> restart());
 
         panel.setLocalTranslation(

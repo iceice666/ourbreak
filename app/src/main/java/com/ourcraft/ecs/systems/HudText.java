@@ -12,8 +12,8 @@ public final class HudText {
         return "Weapon: " + type;
     }
 
-    public static String round(int current, int max) {
-        return "Round " + current + " / " + max;
+    public static String round(int current) {
+        return "Round " + current;
     }
 
     /** Remaining attack time as {@code M:SS}, seconds rounded up and clamped at zero. */

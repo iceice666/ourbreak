@@ -142,6 +142,8 @@ class NpcBuilderTest {
         assertRoundTypes(ROCK, SHELL);
         advanceToNextBuild();
         assertRoundTypes(ROCK, JELLYFISH);
+        advanceToNextBuild();
+        assertRoundTypes(ROCK, SHELL, JELLYFISH, CORAL); // round 5+: the full gauntlet
     }
 
     @Test
@@ -264,14 +266,6 @@ class NpcBuilderTest {
         assertEquals(0, placedBlocks().size());
     }
 
-    @Test
-    void unsupportedRoundIsRejectedBeforeBlockCreation() {
-        ed.setComponent(gameStateId, new RoundComponent(5, 5, ATTACK_DURATION));
-
-        assertThrows(IllegalStateException.class, () -> builder.update(0.0f));
-        assertEquals(0, placedBlocks().size());
-    }
-
     private void completeBuild() {
         int quota = blocksForRound(round().currentRound());
         for (int i = 0; i < quota; i++) {
@@ -320,7 +314,7 @@ class NpcBuilderTest {
     }
 
     private void advanceToNextBuild() {
-        roundSystem.update((float) ATTACK_DURATION + 1.0f);
+        roundSystem.advanceRound();
         assertEquals(BUILD, phase());
     }
 

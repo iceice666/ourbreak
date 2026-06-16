@@ -89,7 +89,7 @@ public class HudState extends BaseAppState {
         }
 
         float top = camera.getHeight() - MARGIN;
-        roundLabel.setText(HudText.round(round.currentRound(), round.maxRounds()));
+        roundLabel.setText(HudText.round(round.currentRound()));
         roundLabel.setLocalTranslation(MARGIN, top, 0f);
 
         boolean attacking = phase.phase() == Phase.ATTACK;

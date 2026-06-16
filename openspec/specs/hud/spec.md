@@ -9,15 +9,15 @@ The HUD presents in-gameplay status — the round counter (always), the attack c
 ## Requirements
 
 ### Requirement: Round counter
-During gameplay the HUD SHALL display the current round and the maximum round in both BUILD and ATTACK phases.
+During gameplay the HUD SHALL display the current round number in both BUILD and ATTACK phases. There is no maximum round, so no total is shown.
 
 #### Scenario: Round shown
-- **WHEN** a match is in round 1 of 4
-- **THEN** the HUD shows a round counter reading round 1 of 4
+- **WHEN** a match is in round 1
+- **THEN** the HUD shows a round counter reading round 1 (with no maximum)
 
 #### Scenario: Round updates across rounds
-- **WHEN** the match advances to a later round
-- **THEN** the round counter reflects the new current round
+- **WHEN** the run advances to a later round
+- **THEN** the round counter reflects the new current round, unbounded
 
 ---
 
