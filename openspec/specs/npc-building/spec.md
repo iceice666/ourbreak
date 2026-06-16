@@ -26,14 +26,18 @@ The NPC builder SHALL place blocks only while the game result is IN_PROGRESS and
 ---
 
 ### Requirement: Per-round placement quota
-The NPC builder SHALL place exactly eight new blocks per round and SHALL place at most one block per update.
+The NPC builder SHALL place a per-round number of new blocks that escalates across the match — 16, 24, 32, then 40 for rounds 1–4 — and SHALL place at most one block per update.
 
 #### Scenario: Incremental construction
-- **WHEN** an active BUILD phase has eight placements remaining
-- **THEN** eight consecutive builder updates create one new block each
+- **WHEN** an active BUILD phase has the round's placements remaining
+- **THEN** that many consecutive builder updates each create one new block
+
+#### Scenario: Escalating quota
+- **WHEN** the match progresses from round 1 to round 4
+- **THEN** the per-round quota increases (16, 24, 32, 40)
 
 #### Scenario: No premature completion
-- **WHEN** fewer than eight blocks have been placed for the current round
+- **WHEN** fewer than the round's quota of blocks have been placed for the current round
 - **THEN** the phase remains BUILD
 
 ---

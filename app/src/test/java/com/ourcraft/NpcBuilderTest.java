@@ -35,7 +35,7 @@ import static com.ourcraft.ecs.components.GameResultComponent.Result.LOSS;
 import static com.ourcraft.ecs.components.GameResultComponent.Result.WIN;
 import static com.ourcraft.ecs.components.PhaseComponent.Phase.ATTACK;
 import static com.ourcraft.ecs.components.PhaseComponent.Phase.BUILD;
-import static com.ourcraft.ecs.systems.NpcBuilderSystem.BLOCKS_PER_ROUND;
+import static com.ourcraft.ecs.systems.NpcBuilderSystem.blocksForRound;
 import static com.ourcraft.ecs.systems.RoundSystem.ATTACK_DURATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
@@ -71,20 +71,21 @@ class NpcBuilderTest {
 
     @Test
     void activeBuildPlacesOneBlockPerUpdateAndTransitionsAfterQuota() {
+        int quota = blocksForRound(1);
         builder.update(0.0f);
         assertEquals(1, placedBlocks().size());
         assertEquals(BUILD, phase());
 
-        for (int i = 1; i < BLOCKS_PER_ROUND - 1; i++) {
+        for (int i = 1; i < quota - 1; i++) {
             builder.update(0.0f);
         }
 
-        assertEquals(BLOCKS_PER_ROUND - 1, placedBlocks().size());
+        assertEquals(quota - 1, placedBlocks().size());
         assertEquals(BUILD, phase());
 
         builder.update(0.0f);
 
-        assertEquals(BLOCKS_PER_ROUND, placedBlocks().size());
+        assertEquals(quota, placedBlocks().size());
         assertEquals(ATTACK, phase());
         assertEquals(ATTACK_DURATION, round().remainingSeconds(), 0.001);
     }
@@ -100,7 +101,7 @@ class NpcBuilderTest {
 
     @Test
     void firstRingUsesDeterministicFrontSideAndRearOrder() {
-        completeBuild();
+        placeFirstRing();
 
         assertIterableEquals(List.of(
                 new PositionComponent(0.0f, 0.0f, 1.0f),
@@ -118,7 +119,7 @@ class NpcBuilderTest {
     void positionsAreTranslatedFromMascotAndPreserveItsHeight() {
         ed.setComponent(mascotId, new PositionComponent(10.0f, 3.0f, -4.0f));
 
-        completeBuild();
+        placeFirstRing();
 
         assertIterableEquals(List.of(
                 new PositionComponent(10.0f, 3.0f, -3.0f),
@@ -187,7 +188,7 @@ class NpcBuilderTest {
     }
 
     @Test
-    void survivorsRemainUnchangedWhileLaterRoundsAddEightBlocks() {
+    void survivorsRemainUnchangedWhileLaterRoundsAddBlocks() {
         completeBuild();
         PlacedBlock front = blockAt(new PositionComponent(0.0f, 0.0f, 1.0f));
         ed.setComponent(front.id(), front.block().applyDamage(0.5f));
@@ -200,7 +201,7 @@ class NpcBuilderTest {
             completeBuild();
 
             List<PlacedBlock> currentBlocks = placedBlocks();
-            assertEquals(blockCountBeforeBuild + BLOCKS_PER_ROUND, currentBlocks.size());
+            assertEquals(blockCountBeforeBuild + blocksForRound(round), currentBlocks.size());
             assertTrue(currentBlocks.containsAll(survivors));
         }
     }
@@ -226,7 +227,7 @@ class NpcBuilderTest {
         builder.update(0.0f);
         builder.update(0.0f);
 
-        assertEquals(BLOCKS_PER_ROUND, placedBlocks().size());
+        assertEquals(blocksForRound(1), placedBlocks().size());
     }
 
     @Test
@@ -240,7 +241,7 @@ class NpcBuilderTest {
         ed.setComponent(gameStateId, new GameResultComponent(LOSS));
         builder.update(0.0f);
 
-        assertEquals(BLOCKS_PER_ROUND, placedBlocks().size());
+        assertEquals(blocksForRound(1), placedBlocks().size());
         assertEquals(BUILD, phase());
     }
 
@@ -272,7 +273,15 @@ class NpcBuilderTest {
     }
 
     private void completeBuild() {
-        for (int i = 0; i < BLOCKS_PER_ROUND; i++) {
+        int quota = blocksForRound(round().currentRound());
+        for (int i = 0; i < quota; i++) {
+            builder.update(0.0f);
+        }
+    }
+
+    /** Places exactly the first ring (8 cells) for placement-order assertions. */
+    private void placeFirstRing() {
+        for (int i = 0; i < 8; i++) {
             builder.update(0.0f);
         }
     }
@@ -295,6 +304,7 @@ class NpcBuilderTest {
 
     private void assertRoundTypes(BlockComponent.BlockType... script) {
         int firstNewBlock = placedBlocks().size();
+        int quota = blocksForRound(round().currentRound());
 
         completeBuild();
 
@@ -303,7 +313,7 @@ class NpcBuilderTest {
                 .map(placed -> placed.block().blockType())
                 .toList();
         List<BlockComponent.BlockType> expectedTypes = java.util.stream.IntStream
-                .range(0, BLOCKS_PER_ROUND)
+                .range(0, quota)
                 .mapToObj(index -> script[index % script.length])
                 .toList();
         assertIterableEquals(expectedTypes, placedTypes);

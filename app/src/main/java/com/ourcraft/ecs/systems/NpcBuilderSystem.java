@@ -25,7 +25,11 @@ import java.util.Set;
 
 public class NpcBuilderSystem {
 
-    public static final int BLOCKS_PER_ROUND = 8;
+    // Per-round block quota (M7 balance): escalates so later rounds are a real time-pressured wall.
+    public static final int ROUND_1_BLOCKS = 16;
+    public static final int ROUND_2_BLOCKS = 24;
+    public static final int ROUND_3_BLOCKS = 32;
+    public static final int ROUND_4_BLOCKS = 40;
 
     private final EntityData ed;
     private final RoundSystem roundSystem;
@@ -59,7 +63,8 @@ public class NpcBuilderSystem {
             activeRound = round.currentRound();
             placementsThisRound = 0;
         }
-        if (placementsThisRound >= BLOCKS_PER_ROUND) {
+        int quota = blocksForRound(activeRound);
+        if (placementsThisRound >= quota) {
             return;
         }
 
@@ -82,7 +87,7 @@ public class NpcBuilderSystem {
                 .ifPresent(effect -> ed.setComponent(blockId, effect));
 
         placementsThisRound++;
-        if (placementsThisRound == BLOCKS_PER_ROUND) {
+        if (placementsThisRound == quota) {
             roundSystem.beginAttackPhase();
         }
     }
@@ -155,6 +160,16 @@ public class NpcBuilderSystem {
         }
         offsets.add(new GridOffset(0, -radius));
         return offsets;
+    }
+
+    public static int blocksForRound(int round) {
+        return switch (round) {
+            case 1 -> ROUND_1_BLOCKS;
+            case 2 -> ROUND_2_BLOCKS;
+            case 3 -> ROUND_3_BLOCKS;
+            case 4 -> ROUND_4_BLOCKS;
+            default -> throw new IllegalStateException("no block quota for round " + round);
+        };
     }
 
     private List<BlockType> blockScript(int round) {
