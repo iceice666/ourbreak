@@ -25,11 +25,14 @@ public class OurcraftGame extends SimpleApplication {
         // Lemur GUI bootstrap (default Java styling — no Groovy glass style).
         GuiGlobals.initialize(this);
 
-        viewPort.setBackgroundColor(new ColorRGBA(0.1f, 0.12f, 0.15f, 1f));
+        // Sunny beach sky.
+        viewPort.setBackgroundColor(new ColorRGBA(0.53f, 0.81f, 0.92f, 1f));
 
+        // Warm afternoon sun + warm ambient fill so the sand reads as a sunny beach, not a cold cave.
         DirectionalLight sun = new DirectionalLight(new Vector3f(-0.5f, -1f, -0.3f).normalizeLocal());
+        sun.setColor(new ColorRGBA(1f, 0.96f, 0.84f, 1f).mult(1.1f));
         rootNode.addLight(sun);
-        rootNode.addLight(new AmbientLight(ColorRGBA.White.mult(0.3f)));
+        rootNode.addLight(new AmbientLight(new ColorRGBA(0.62f, 0.6f, 0.52f, 1f)));
 
         stateManager.attach(new AudioState());
         stateManager.attach(new MainMenuState());
