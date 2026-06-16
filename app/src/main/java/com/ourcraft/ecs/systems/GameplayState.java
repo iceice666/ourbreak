@@ -25,6 +25,7 @@ public class GameplayState extends BaseAppState {
     private EntityData ed;
     private ModelViewState modelView;
     private EnvironmentState environment;
+    private MascotState mascot;
     private HitFeedbackState hitFeedback;
     private PoisonState poison;
     private RoundSystem roundSystem;
@@ -69,6 +70,9 @@ public class GameplayState extends BaseAppState {
         blockEffect = new BlockEffectSystem(ed, gameStateId);
         coralGrowth = new CoralGrowthSystem(ed, gameStateId);
 
+        mascot = new MascotState(ed, gameStateId);
+        getStateManager().attach(mascot);
+
         playerControl = new PlayerControlState(ed, playerId, gameStateId, blockEffect);
         getStateManager().attach(playerControl);
 
@@ -88,6 +92,7 @@ public class GameplayState extends BaseAppState {
         getStateManager().detach(playerControl);
         getStateManager().detach(poison);
         getStateManager().detach(hitFeedback);
+        getStateManager().detach(mascot);
         getStateManager().detach(environment);
         getStateManager().detach(modelView);
         victorySystem.close();
