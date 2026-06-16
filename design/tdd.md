@@ -88,7 +88,7 @@ MainMenuState
 |------|------|----------|
 | SAND | 1 | 無 |
 | CORAL | 2 | `BlockEffectSystem` 偵測玩家在 1.5 格內 → 降低移動速度 |
-| SHELL | 1 | `BlockEffectSystem` 監聽 block destroy → 對玩家造成反彈傷害 |
+| SHELL | 1 | `WeaponSystem`：被劍/無人機打 → 分裂成 2 個新貝殼（無上限）；槍乾淨清掉 |
 | ROCK | 4 | 無 |
 | JELLYFISH | 1 | `BlockEffectSystem` 在玩家 HUD 套上閃爍 post-process filter |
 
@@ -110,12 +110,12 @@ MainMenuState
 | Gun | CORAL（遠距免疫減速）、JELLYFISH（遠距免疫閃爍）| ROCK（單體低效）|
 | Drone | ROCK（範圍破高耐久）、SAND（大範圍清除）| JELLYFISH（操控時閃爍）、SHELL（引爆連鎖反彈）|
 
-**傷害數值（M7 調整，見 `WeaponSystem` 常數）**：實際傷害 = 各武器基礎傷害 × 剋制倍率。基礎傷害 SWORD 1.0 / GUN 2.0 / DRONE 1.0；倍率 剋 ×2.0、被剋 ×0.5、普通 ×1.0。各組合的命中次數（耐久 ÷ 傷害）：
+**傷害數值（見 `WeaponSystem` 常數）**：實際傷害 = 各武器基礎傷害 × 剋制倍率。基礎傷害 SWORD 1.0 / GUN 8.0 / DRONE 1.0；倍率 剋 ×2.0、被剋 ×0.5、普通 ×1.0。槍基礎傷害極高 → 單體一槍秒殺任何方塊（賣點是單體爆發，弱點是沒有 AoE）。**貝殼不走傷害模型**，改由分裂機制處理。各組合命中次數（耐久 ÷ 傷害）：
 
 | | SAND(1) | CORAL(2) | SHELL(1) | ROCK(4) | JELLY(1) |
 |---|---|---|---|---|---|
 | SWORD | 1 | 4 | 2 | 4 | 1 |
-| GUN | 1 | 1 | 1 | 4 | 1 |
+| GUN | 1 | 1 | 1 | 1 | 1 |
 | DRONE | 1 | 2 | 2 | 2 | 2 |
 
 ---

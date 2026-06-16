@@ -34,36 +34,6 @@ During the ATTACK phase, the block-effect system SHALL compute a movement slow f
 
 ---
 
-### Requirement: Player reflect health
-The player entity SHALL carry a `PlayerHealthComponent` with current and maximum hit points, and reflect damage SHALL reduce current health clamped at zero. The match result SHALL NOT depend on player health — win/loss remains decided by buildings and the round timer, and M5 SHALL add no player-death condition.
-
-#### Scenario: Reflect reduces health
-- **WHEN** reflect damage is applied to the player
-- **THEN** current health decreases by the reflect amount, not below zero
-
-#### Scenario: Health does not decide the match
-- **WHEN** the player's health reaches zero
-- **THEN** the game result is unchanged by that fact and remains driven by buildings and the timer
-
----
-
-### Requirement: Shell on-destroy reflect
-When a Shell block is destroyed, the block-effect system SHALL apply one reflect of 20 damage to the player's health, and SHALL apply one reflect per destroyed Shell so that area destruction chains.
-
-#### Scenario: Destroying a Shell reflects
-- **WHEN** a Shell block transitions from present to destroyed
-- **THEN** the player's health is reduced by 20
-
-#### Scenario: Chained reflect from area destruction
-- **WHEN** three Shell blocks are destroyed in the same update
-- **THEN** the player's health is reduced by 60 (three reflects of 20)
-
-#### Scenario: Non-shell destruction does not reflect
-- **WHEN** a Sand, Coral, Rock, or Jellyfish block is destroyed
-- **THEN** the player's health is unchanged
-
----
-
 ### Requirement: Jellyfish placement flicker trigger
 When a Jellyfish block is placed, the block-effect system SHALL emit a flicker trigger that downstream HUD rendering can consume. The visual flicker filter itself is out of scope for this capability.
 

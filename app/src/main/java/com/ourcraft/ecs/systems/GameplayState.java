@@ -7,7 +7,6 @@ import com.jme3.math.Vector3f;
 import com.ourcraft.ecs.components.GameResultComponent;
 import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.ourcraft.ecs.components.MascotComponent;
-import com.ourcraft.ecs.components.PlayerHealthComponent;
 import com.ourcraft.ecs.components.PositionComponent;
 import com.ourcraft.ecs.components.RoundComponent;
 import com.ourcraft.ecs.components.WeaponComponent;
@@ -22,9 +21,6 @@ import com.simsilica.es.base.DefaultEntityData;
  * once the result is decided.
  */
 public class GameplayState extends BaseAppState {
-
-    /** Player starting hit points (GDD §Mechanics tuning). */
-    private static final float PLAYER_MAX_HEALTH = 100f;
 
     private EntityData ed;
     private ModelViewState modelView;
@@ -64,12 +60,11 @@ public class GameplayState extends BaseAppState {
         EntityId playerId = ed.createEntity();
         ed.setComponents(playerId,
                 new WeaponComponent(WeaponType.SWORD),
-                new PositionComponent(0f, 0f, 8f),
-                new PlayerHealthComponent(PLAYER_MAX_HEALTH));
+                new PositionComponent(0f, 0f, 8f));
 
         victorySystem = new VictorySystem(ed, gameStateId, roundSystem);
         npcBuilder = new NpcBuilderSystem(ed, roundSystem, mascotId);
-        blockEffect = new BlockEffectSystem(ed, playerId, gameStateId);
+        blockEffect = new BlockEffectSystem(ed, gameStateId);
 
         playerControl = new PlayerControlState(ed, playerId, gameStateId, blockEffect);
         getStateManager().attach(playerControl);

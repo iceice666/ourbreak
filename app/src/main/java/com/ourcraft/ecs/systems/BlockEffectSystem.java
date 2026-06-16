@@ -4,7 +4,6 @@ import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.BlockComponent.BlockType;
 import com.ourcraft.ecs.components.PhaseComponent;
 import com.ourcraft.ecs.components.PhaseComponent.Phase;
-import com.ourcraft.ecs.components.PlayerHealthComponent;
 import com.ourcraft.ecs.components.PositionComponent;
 import com.simsilica.es.Entity;
 import com.simsilica.es.EntityData;
@@ -18,9 +17,9 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Headless block special-effect triggers (GDD §Mechanics). Computes the Coral proximity slow,
- * applies Shell on-destroy reflect to the player's health, records Jellyfish placement flickers,
- * and expands a Drone hit into its 3x3 neighborhood. All magnitudes are placeholders (tuned in M7).
+ * Headless block special-effect triggers (GDD §Mechanics): the Coral proximity slow, the Drone 3x3
+ * neighborhood expansion, and Jellyfish placement flicker triggers. (Shell's behaviour is the split
+ * mechanic in {@code WeaponSystem}; there is no player health.)
  */
 public class BlockEffectSystem {
 
@@ -28,34 +27,24 @@ public class BlockEffectSystem {
     public static final float CORAL_SLOW_FACTOR = 0.5f;
     /** Coral slow range in grid cells (GDD: 1.5). */
     public static final float CORAL_RANGE = 1.5f;
-    /** Health removed per destroyed Shell block (GDD §Mechanics). */
-    public static final float SHELL_REFLECT_DAMAGE = 20.0f;
     /** Jellyfish vision-flicker duration in seconds — reserved for the flicker visual (GDD §Mechanics). */
     public static final float JELLYFISH_FLICKER_SECONDS = 2.0f;
 
     private final EntityData ed;
-    private final EntityId playerId;
     private final EntityId gameStateId;
 
     private final EntitySet positionedBlocks;
     private final EntitySet trackedBlocks;
-    private final Map<EntityId, BlockType> trackedTypes = new HashMap<>();
 
     private int flickerTriggerCount;
 
-    public BlockEffectSystem(EntityData ed, EntityId playerId, EntityId gameStateId) {
+    public BlockEffectSystem(EntityData ed, EntityId gameStateId) {
         this.ed = Objects.requireNonNull(ed, "ed");
-        this.playerId = Objects.requireNonNull(playerId, "playerId");
         this.gameStateId = Objects.requireNonNull(gameStateId, "gameStateId");
         this.positionedBlocks = ed.getEntities(BlockComponent.class, PositionComponent.class);
         this.trackedBlocks = ed.getEntities(BlockComponent.class);
-
-        // Seed the type map so blocks already present can still reflect on destruction; pre-existing
-        // blocks are intentionally not counted as placement flickers.
+        // Drain the initial set so pre-existing blocks are not counted as placement flickers.
         trackedBlocks.applyChanges();
-        for (Entity block : trackedBlocks) {
-            trackedTypes.put(block.getId(), block.get(BlockComponent.class).blockType());
-        }
     }
 
     /** Strongest Coral slow factor for the player position during ATTACK; 1.0 when none applies. */
@@ -111,25 +100,16 @@ public class BlockEffectSystem {
         return targets;
     }
 
-    /** Number of Jellyfish placement flicker triggers recorded so far (consumed by the HUD in M6). */
+    /** Number of Jellyfish placement flicker triggers recorded so far (consumed by the HUD). */
     public int flickerTriggerCount() {
         return flickerTriggerCount;
     }
 
-    /** Advances destroy/placement detection: applies Shell reflect and records Jellyfish flickers. */
+    /** Records a flicker trigger for each newly placed Jellyfish block. */
     public void update(float tpf) {
         trackedBlocks.applyChanges();
-
-        for (Entity removed : trackedBlocks.getRemovedEntities()) {
-            BlockType type = trackedTypes.remove(removed.getId());
-            if (type == BlockType.SHELL) {
-                applyReflect();
-            }
-        }
         for (Entity added : trackedBlocks.getAddedEntities()) {
-            BlockType type = added.get(BlockComponent.class).blockType();
-            trackedTypes.put(added.getId(), type);
-            if (type == BlockType.JELLYFISH) {
+            if (added.get(BlockComponent.class).blockType() == BlockType.JELLYFISH) {
                 flickerTriggerCount++;
             }
         }
@@ -138,12 +118,5 @@ public class BlockEffectSystem {
     public void close() {
         positionedBlocks.release();
         trackedBlocks.release();
-    }
-
-    private void applyReflect() {
-        PlayerHealthComponent health = ed.getComponent(playerId, PlayerHealthComponent.class);
-        if (health != null) {
-            ed.setComponent(playerId, health.applyDamage(SHELL_REFLECT_DAMAGE));
-        }
     }
 }

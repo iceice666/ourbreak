@@ -129,6 +129,7 @@ public class PlayerControlState extends BaseAppState {
 
     @Override
     protected void cleanup(Application app) {
+        weaponSystem.close();
     }
 
     @Override

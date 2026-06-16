@@ -4,7 +4,6 @@ import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.BlockComponent.BlockType;
 import com.ourcraft.ecs.components.EffectComponent;
 import com.ourcraft.ecs.components.PhaseComponent;
-import com.ourcraft.ecs.components.PlayerHealthComponent;
 import com.ourcraft.ecs.components.PositionComponent;
 import com.ourcraft.ecs.systems.BlockEffectSystem;
 import com.simsilica.es.EntityData;
@@ -19,20 +18,15 @@ import java.util.List;
 import static com.ourcraft.ecs.components.BlockComponent.BlockType.CORAL;
 import static com.ourcraft.ecs.components.BlockComponent.BlockType.JELLYFISH;
 import static com.ourcraft.ecs.components.BlockComponent.BlockType.SAND;
-import static com.ourcraft.ecs.components.BlockComponent.BlockType.SHELL;
 import static com.ourcraft.ecs.components.PhaseComponent.Phase.ATTACK;
 import static com.ourcraft.ecs.components.PhaseComponent.Phase.BUILD;
-import static com.ourcraft.ecs.systems.BlockEffectSystem.SHELL_REFLECT_DAMAGE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BlockEffectTest {
 
-    private static final float PLAYER_MAX_HEALTH = 100f;
-
     private EntityData ed;
     private EntityId gameStateId;
-    private EntityId playerId;
     private BlockEffectSystem system;
 
     @BeforeEach
@@ -42,13 +36,8 @@ class BlockEffectTest {
         gameStateId = ed.createEntity();
         ed.setComponent(gameStateId, new PhaseComponent(ATTACK));
 
-        playerId = ed.createEntity();
-        ed.setComponents(playerId,
-                new PlayerHealthComponent(PLAYER_MAX_HEALTH),
-                new PositionComponent(0f, 0f, 0f));
-
         // Construct before any blocks so placements register as additions.
-        system = new BlockEffectSystem(ed, playerId, gameStateId);
+        system = new BlockEffectSystem(ed, gameStateId);
     }
 
     @AfterEach
@@ -76,45 +65,6 @@ class BlockEffectTest {
         ed.setComponent(gameStateId, new PhaseComponent(BUILD));
         createBlock(CORAL, 1f, 0f);
         assertEquals(1.0f, system.coralSlowFactor(new PositionComponent(0f, 0f, 0f)));
-    }
-
-    // ── Shell reflect ────────────────────────────────────────────────────────
-
-    @Test
-    void destroyingShellReflectsToPlayer() {
-        EntityId shell = createBlock(SHELL, 1f, 0f);
-        system.update(0f);
-
-        ed.removeEntity(shell);
-        system.update(0f);
-
-        assertEquals(PLAYER_MAX_HEALTH - SHELL_REFLECT_DAMAGE, playerHealth());
-    }
-
-    @Test
-    void destroyingMultipleShellsChainsReflect() {
-        EntityId a = createBlock(SHELL, 1f, 0f);
-        EntityId b = createBlock(SHELL, 2f, 0f);
-        EntityId c = createBlock(SHELL, 3f, 0f);
-        system.update(0f);
-
-        ed.removeEntity(a);
-        ed.removeEntity(b);
-        ed.removeEntity(c);
-        system.update(0f);
-
-        assertEquals(PLAYER_MAX_HEALTH - 3f * SHELL_REFLECT_DAMAGE, playerHealth());
-    }
-
-    @Test
-    void destroyingNonShellDoesNotReflect() {
-        EntityId sand = createBlock(SAND, 1f, 0f);
-        system.update(0f);
-
-        ed.removeEntity(sand);
-        system.update(0f);
-
-        assertEquals(PLAYER_MAX_HEALTH, playerHealth());
     }
 
     // ── Jellyfish flicker ────────────────────────────────────────────────────
@@ -173,9 +123,5 @@ class BlockEffectTest {
         ed.setComponents(id, new BlockComponent(type), new PositionComponent(x, 0f, z));
         EffectComponent.forBlockType(type).ifPresent(effect -> ed.setComponent(id, effect));
         return id;
-    }
-
-    private float playerHealth() {
-        return ed.getComponent(playerId, PlayerHealthComponent.class).current();
     }
 }
