@@ -21,6 +21,7 @@ import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Ray;
 import com.jme3.math.Vector2f;
+import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -38,8 +39,9 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * First-person input for an active match. WASD movement is delegated to the fly-cam, but mouse-look
- * is handled here. jME's FlyByCamera (and GLFW's {@code CURSOR_DISABLED}) drive FPS look by warping
+ * First-person input for an active match. WASD movement and mouse-look are both handled here (not via
+ * the fly-cam) so they behave identically across platforms. The fly-cam is only borrowed for the
+ * native captured-cursor look. jME's FlyByCamera (and GLFW's {@code CURSOR_DISABLED}) drive FPS look by warping
  * the cursor back to centre each frame, which WSLg/XWayland blocks (Wayland forbids apps moving the
  * cursor) — so the standard captured-cursor look never rotates. Instead we keep the cursor visible
  * and rotate from its per-frame position delta (free look, no button), with edge-steer so you can
@@ -53,8 +55,12 @@ public class PlayerControlState extends BaseAppState {
     private static final String SELECT_DRONE = "ourcraft.selectDrone";
     private static final String CYCLE_WEAPON = "ourcraft.cycleWeapon";
     private static final String ATTACK = "ourcraft.attack";
+    private static final String MOVE_FORWARD = "ourcraft.moveForward";
+    private static final String MOVE_BACK = "ourcraft.moveBack";
+    private static final String MOVE_LEFT = "ourcraft.moveLeft";
+    private static final String MOVE_RIGHT = "ourcraft.moveRight";
 
-    /** Fly-cam movement units per second at full (un-slowed) speed. */
+    /** Player movement units per second at full (un-slowed) speed. */
     private static final float BASE_MOVE_SPEED = 8f;
     /** Mouse-look sensitivity (radians per pixel of cursor movement). */
     private static final float LOOK_SENSITIVITY = 0.004f;
@@ -85,6 +91,11 @@ public class PlayerControlState extends BaseAppState {
     private float lastCursorX;
     private float lastCursorY;
     private boolean lookPrimed;
+
+    private boolean moveForward;
+    private boolean moveBack;
+    private boolean moveLeft;
+    private boolean moveRight;
 
     /**
      * True when the platform allows captured-cursor FPS look (real Windows / desktop Linux). False
@@ -145,18 +156,27 @@ public class PlayerControlState extends BaseAppState {
 
     @Override
     protected void onEnable() {
-        flyCam.setEnabled(true);
-        flyCam.setMoveSpeed(BASE_MOVE_SPEED);
+        // We move the camera ourselves (see updateMovement), so strip the fly-cam's own movement
+        // bindings — they behaved inconsistently across platforms (WASD worked under WSLg but not the
+        // native Windows build). The fly-cam is then only used for the native captured-cursor look.
+        for (String mapping : List.of(CameraInput.FLYCAM_STRAFELEFT, CameraInput.FLYCAM_STRAFERIGHT,
+                CameraInput.FLYCAM_FORWARD, CameraInput.FLYCAM_BACKWARD,
+                CameraInput.FLYCAM_RISE, CameraInput.FLYCAM_LOWER)) {
+            if (inputManager.hasMapping(mapping)) {
+                inputManager.deleteMapping(mapping);
+            }
+        }
 
         if (nativeLook) {
             // Real desktop: let the fly-cam do captured-cursor FPS look (cursor hidden + warped).
+            flyCam.setEnabled(true);
             flyCam.setDragToRotate(false);
             flyCam.setRotationSpeed(1.5f);
             inputManager.setCursorVisible(false);
         } else {
-            // WSLg: keep the cursor visible and do our own delta look; strip the fly-cam's look
-            // controls so it never tries to grab/warp the cursor (which WSLg ignores anyway).
-            flyCam.setDragToRotate(true);
+            // WSLg: do our own delta look with the cursor visible; disable the fly-cam entirely and
+            // strip its look bindings so it never tries to grab/warp the cursor (WSLg ignores that).
+            flyCam.setEnabled(false);
             inputManager.setCursorVisible(true);
             for (String mapping : List.of(CameraInput.FLYCAM_LEFT, CameraInput.FLYCAM_RIGHT,
                     CameraInput.FLYCAM_UP, CameraInput.FLYCAM_DOWN, CameraInput.FLYCAM_ROTATEDRAG)) {
@@ -173,24 +193,31 @@ public class PlayerControlState extends BaseAppState {
 
         guiNode.attachChild(crosshair);
 
+        inputManager.addMapping(MOVE_FORWARD, new KeyTrigger(KeyInput.KEY_W));
+        inputManager.addMapping(MOVE_BACK, new KeyTrigger(KeyInput.KEY_S));
+        inputManager.addMapping(MOVE_LEFT, new KeyTrigger(KeyInput.KEY_A));
+        inputManager.addMapping(MOVE_RIGHT, new KeyTrigger(KeyInput.KEY_D));
         inputManager.addMapping(SELECT_SWORD, new KeyTrigger(KeyInput.KEY_1));
         inputManager.addMapping(SELECT_GUN, new KeyTrigger(KeyInput.KEY_2));
         inputManager.addMapping(SELECT_DRONE, new KeyTrigger(KeyInput.KEY_3));
         inputManager.addMapping(CYCLE_WEAPON, new KeyTrigger(KeyInput.KEY_Q));
         inputManager.addMapping(ATTACK, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
         inputManager.addListener(actionListener,
+                MOVE_FORWARD, MOVE_BACK, MOVE_LEFT, MOVE_RIGHT,
                 SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK);
     }
 
     @Override
     protected void onDisable() {
         inputManager.removeListener(actionListener);
-        for (String mapping : List.of(SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK)) {
+        for (String mapping : List.of(MOVE_FORWARD, MOVE_BACK, MOVE_LEFT, MOVE_RIGHT,
+                SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK)) {
             if (inputManager.hasMapping(mapping)) {
                 inputManager.deleteMapping(mapping);
             }
         }
         lookPrimed = false;
+        moveForward = moveBack = moveLeft = moveRight = false;
         crosshair.removeFromParent();
         flyCam.setEnabled(false);
         inputManager.setCursorVisible(true);
@@ -200,10 +227,29 @@ public class PlayerControlState extends BaseAppState {
     public void update(float tpf) {
         // Coral proximity slows movement; full speed when no Coral block is in range.
         float factor = blockEffect.coralSlowFactor(PositionComponent.of(camera.getLocation()));
-        flyCam.setMoveSpeed(BASE_MOVE_SPEED * factor);
+        updateMovement(tpf, factor);
 
         if (!nativeLook) {
             updateLook(tpf); // native look is driven by the fly-cam itself
+        }
+    }
+
+    /** WASD moves the camera on the horizontal plane along its facing, at the (coral-slowed) speed. */
+    private void updateMovement(float tpf, float speedFactor) {
+        Vector3f forward = camera.getDirection().clone();
+        forward.y = 0f;
+        Vector3f left = camera.getLeft().clone();
+        left.y = 0f;
+
+        Vector3f velocity = new Vector3f();
+        if (moveForward) velocity.addLocal(forward);
+        if (moveBack) velocity.subtractLocal(forward);
+        if (moveLeft) velocity.addLocal(left);
+        if (moveRight) velocity.subtractLocal(left);
+
+        if (velocity.lengthSquared() > 0f) {
+            velocity.normalizeLocal().multLocal(BASE_MOVE_SPEED * speedFactor * tpf);
+            camera.setLocation(camera.getLocation().add(velocity));
         }
     }
 
@@ -256,6 +302,14 @@ public class PlayerControlState extends BaseAppState {
     }
 
     private void onAction(String name, boolean isPressed, float tpf) {
+        // Movement keys need both press and release to toggle the held state.
+        switch (name) {
+            case MOVE_FORWARD -> { moveForward = isPressed; return; }
+            case MOVE_BACK -> { moveBack = isPressed; return; }
+            case MOVE_LEFT -> { moveLeft = isPressed; return; }
+            case MOVE_RIGHT -> { moveRight = isPressed; return; }
+            default -> { /* fall through to the on-press actions below */ }
+        }
         if (!isPressed) {
             return;
         }
