@@ -7,6 +7,7 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.ourcraft.ecs.systems.AudioState;
 import com.ourcraft.ecs.systems.MainMenuState;
+import com.simsilica.lemur.GuiGlobals;
 
 public class OurcraftGame extends SimpleApplication {
 
@@ -17,6 +18,9 @@ public class OurcraftGame extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         flyCam.setEnabled(false);
+
+        // Lemur GUI bootstrap (default Java styling — no Groovy glass style).
+        GuiGlobals.initialize(this);
 
         viewPort.setBackgroundColor(new ColorRGBA(0.1f, 0.12f, 0.15f, 1f));
 

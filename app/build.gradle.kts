@@ -9,6 +9,7 @@ repositories {
 dependencies {
     implementation(libs.bundles.jme3)
     implementation(libs.zay.es)
+    implementation(libs.lemur)
     implementation(libs.guava)
 
     testImplementation(libs.junit.jupiter)

@@ -33,6 +33,7 @@ public class GameplayState extends BaseAppState {
     private NpcBuilderSystem npcBuilder;
     private BlockEffectSystem blockEffect;
     private PlayerControlState playerControl;
+    private HudState hud;
 
     private EntityId gameStateId;
     private boolean resolved;
@@ -68,12 +69,16 @@ public class GameplayState extends BaseAppState {
         playerControl = new PlayerControlState(ed, playerId, gameStateId, blockEffect);
         getStateManager().attach(playerControl);
 
+        hud = new HudState(ed, gameStateId, playerId);
+        getStateManager().attach(hud);
+
         app.getCamera().setLocation(new Vector3f(0f, 1.5f, 8f));
         app.getCamera().lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
     }
 
     @Override
     protected void cleanup(Application app) {
+        getStateManager().detach(hud);
         getStateManager().detach(playerControl);
         getStateManager().detach(environment);
         getStateManager().detach(modelView);

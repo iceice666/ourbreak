@@ -44,6 +44,7 @@ public class PlayerControlState extends BaseAppState {
     private static final String SELECT_SWORD = "ourcraft.selectSword";
     private static final String SELECT_GUN = "ourcraft.selectGun";
     private static final String SELECT_DRONE = "ourcraft.selectDrone";
+    private static final String CYCLE_WEAPON = "ourcraft.cycleWeapon";
     private static final String ATTACK = "ourcraft.attack";
     private static final String LOOK_DRAG = "ourcraft.lookDrag";
     private static final String LOOK_X_NEG = "ourcraft.lookXNeg";
@@ -144,8 +145,10 @@ public class PlayerControlState extends BaseAppState {
         inputManager.addMapping(SELECT_SWORD, new KeyTrigger(KeyInput.KEY_1));
         inputManager.addMapping(SELECT_GUN, new KeyTrigger(KeyInput.KEY_2));
         inputManager.addMapping(SELECT_DRONE, new KeyTrigger(KeyInput.KEY_3));
+        inputManager.addMapping(CYCLE_WEAPON, new KeyTrigger(KeyInput.KEY_Q));
         inputManager.addMapping(ATTACK, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
-        inputManager.addListener(actionListener, LOOK_DRAG, SELECT_SWORD, SELECT_GUN, SELECT_DRONE, ATTACK);
+        inputManager.addListener(actionListener,
+                LOOK_DRAG, SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK);
     }
 
     @Override
@@ -153,7 +156,7 @@ public class PlayerControlState extends BaseAppState {
         inputManager.removeListener(actionListener);
         inputManager.removeListener(lookListener);
         for (String mapping : List.of(LOOK_DRAG, LOOK_X_NEG, LOOK_X_POS, LOOK_Y_NEG, LOOK_Y_POS,
-                SELECT_SWORD, SELECT_GUN, SELECT_DRONE, ATTACK)) {
+                SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK)) {
             if (inputManager.hasMapping(mapping)) {
                 inputManager.deleteMapping(mapping);
             }
@@ -183,9 +186,17 @@ public class PlayerControlState extends BaseAppState {
             case SELECT_SWORD -> selectWeapon(WeaponType.SWORD);
             case SELECT_GUN -> selectWeapon(WeaponType.GUN);
             case SELECT_DRONE -> selectWeapon(WeaponType.DRONE);
+            case CYCLE_WEAPON -> cycleWeapon();
             case ATTACK -> attack();
             default -> { /* ignore */ }
         }
+    }
+
+    private void cycleWeapon() {
+        WeaponComponent weapon = ed.getComponent(playerId, WeaponComponent.class);
+        WeaponType[] types = WeaponType.values();
+        int current = weapon != null ? weapon.weaponType().ordinal() : -1;
+        selectWeapon(types[(current + 1) % types.length]);
     }
 
     private void onLook(String name, float value, float tpf) {

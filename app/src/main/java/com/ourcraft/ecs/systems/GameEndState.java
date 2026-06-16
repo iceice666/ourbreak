@@ -3,20 +3,21 @@ package com.ourcraft.ecs.systems;
 import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.BaseAppState;
-import com.jme3.font.BitmapFont;
-import com.jme3.font.BitmapText;
 import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.scene.Node;
 import com.ourcraft.ecs.components.GameResultComponent.Result;
+import com.simsilica.lemur.Button;
+import com.simsilica.lemur.Container;
+import com.simsilica.lemur.Label;
 
 import java.util.Objects;
 
 /**
- * End-of-match screen showing the win/loss outcome. Placeholder GUI text only (Lemur arrives in M6);
- * ENTER returns to the main menu for a fresh match.
+ * End-of-match screen built with Lemur: shows the win/loss outcome and a clickable Restart button
+ * (Enter kept as a shortcut) that returns to the main menu. Replaces the M4 placeholder BitmapText.
  */
 public class GameEndState extends BaseAppState {
 
@@ -24,9 +25,16 @@ public class GameEndState extends BaseAppState {
 
     private final Result result;
 
+    private SimpleApplication simpleApp;
     private InputManager inputManager;
     private Node guiNode;
-    private BitmapText text;
+    private Container panel;
+
+    private final ActionListener shortcuts = (name, isPressed, tpf) -> {
+        if (isPressed && RESTART.equals(name)) {
+            restart();
+        }
+    };
 
     public GameEndState(Result result) {
         this.result = Objects.requireNonNull(result, "result");
@@ -37,17 +45,18 @@ public class GameEndState extends BaseAppState {
 
     @Override
     protected void initialize(Application app) {
+        this.simpleApp = (SimpleApplication) app;
         this.inputManager = app.getInputManager();
-        this.guiNode = ((SimpleApplication) app).getGuiNode();
+        this.guiNode = simpleApp.getGuiNode();
 
-        String outcome = result == Result.WIN ? "YOU WIN" : "YOU LOSE";
-        BitmapFont font = app.getAssetManager().loadFont("Interface/Fonts/Default.fnt");
-        text = new BitmapText(font);
-        text.setSize(font.getCharSet().getRenderedSize() * 1.5f);
-        text.setText(outcome + "\n\n[ENTER] Back to Menu");
-        text.setLocalTranslation(
-                app.getCamera().getWidth() * 0.5f - text.getLineWidth() * 0.5f,
-                app.getCamera().getHeight() * 0.5f + text.getHeight(),
+        panel = new Container();
+        Label outcome = panel.addChild(new Label(result == Result.WIN ? "YOU WIN" : "YOU LOSE"));
+        outcome.setFontSize(36f);
+        panel.addChild(new Button("Restart")).addClickCommands(src -> restart());
+
+        panel.setLocalTranslation(
+                (app.getCamera().getWidth() - panel.getPreferredSize().x) / 2f,
+                (app.getCamera().getHeight() + panel.getPreferredSize().y) / 2f,
                 0f);
     }
 
@@ -57,24 +66,22 @@ public class GameEndState extends BaseAppState {
 
     @Override
     protected void onEnable() {
-        guiNode.attachChild(text);
+        guiNode.attachChild(panel);
         inputManager.addMapping(RESTART, new KeyTrigger(KeyInput.KEY_RETURN));
-        inputManager.addListener(listener, RESTART);
+        inputManager.addListener(shortcuts, RESTART);
     }
 
     @Override
     protected void onDisable() {
-        text.removeFromParent();
-        inputManager.removeListener(listener);
+        panel.removeFromParent();
+        inputManager.removeListener(shortcuts);
         if (inputManager.hasMapping(RESTART)) {
             inputManager.deleteMapping(RESTART);
         }
     }
 
-    private final ActionListener listener = (name, isPressed, tpf) -> {
-        if (isPressed && RESTART.equals(name)) {
-            getStateManager().detach(this);
-            getStateManager().attach(new MainMenuState());
-        }
-    };
+    private void restart() {
+        getStateManager().detach(this);
+        getStateManager().attach(new MainMenuState());
+    }
 }
