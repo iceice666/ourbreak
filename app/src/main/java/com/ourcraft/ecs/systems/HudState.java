@@ -32,7 +32,8 @@ public class HudState extends BaseAppState {
 
     private static final float MARGIN = 12f;
     private static final float FONT_SIZE = 24f;
-    private static final float ICON_SIZE = 72f;
+    private static final float WEAPON_FONT_SIZE = 34f;
+    private static final float ICON_SIZE = 110f;
 
     private final EntityData ed;
     private final EntityId gameStateId;
@@ -69,6 +70,7 @@ public class HudState extends BaseAppState {
         countdownLabel = label();
         buildingsLabel = label();
         weaponLabel = label();
+        weaponLabel.setFontSize(WEAPON_FONT_SIZE); // weapon readout is enlarged vs the rest of the HUD
 
         weaponIcon = new Picture("weapon-icon");
         weaponIcon.setWidth(ICON_SIZE);
