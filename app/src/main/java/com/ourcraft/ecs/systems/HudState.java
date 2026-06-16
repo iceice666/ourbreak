@@ -3,19 +3,24 @@ package com.ourcraft.ecs.systems;
 import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.BaseAppState;
+import com.jme3.asset.AssetManager;
 import com.jme3.math.ColorRGBA;
 import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
+import com.jme3.texture.Texture;
+import com.jme3.ui.Picture;
 import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.PhaseComponent;
 import com.ourcraft.ecs.components.PhaseComponent.Phase;
 import com.ourcraft.ecs.components.RoundComponent;
 import com.ourcraft.ecs.components.WeaponComponent;
+import com.ourcraft.ecs.components.WeaponComponent.WeaponType;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 import com.simsilica.es.EntitySet;
 import com.simsilica.lemur.Label;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -27,11 +32,13 @@ public class HudState extends BaseAppState {
 
     private static final float MARGIN = 12f;
     private static final float FONT_SIZE = 24f;
+    private static final float ICON_SIZE = 72f;
 
     private final EntityData ed;
     private final EntityId gameStateId;
     private final EntityId playerId;
 
+    private AssetManager assetManager;
     private Node guiNode;
     private Camera camera;
     private EntitySet blocks;
@@ -40,6 +47,10 @@ public class HudState extends BaseAppState {
     private Label countdownLabel;
     private Label buildingsLabel;
     private Label weaponLabel;
+    private Picture weaponIcon;
+    private WeaponType shownWeapon;
+    private float iconW;
+    private float iconH;
 
     public HudState(EntityData ed, EntityId gameStateId, EntityId playerId) {
         this.ed = Objects.requireNonNull(ed, "ed");
@@ -49,6 +60,7 @@ public class HudState extends BaseAppState {
 
     @Override
     protected void initialize(Application app) {
+        this.assetManager = app.getAssetManager();
         this.guiNode = ((SimpleApplication) app).getGuiNode();
         this.camera = app.getCamera();
         this.blocks = ed.getEntities(BlockComponent.class);
@@ -57,6 +69,11 @@ public class HudState extends BaseAppState {
         countdownLabel = label();
         buildingsLabel = label();
         weaponLabel = label();
+
+        weaponIcon = new Picture("weapon-icon");
+        weaponIcon.setWidth(ICON_SIZE);
+        weaponIcon.setHeight(ICON_SIZE);
+        weaponIcon.setPosition(MARGIN, MARGIN);
     }
 
     @Override
@@ -70,6 +87,7 @@ public class HudState extends BaseAppState {
         guiNode.attachChild(countdownLabel);
         guiNode.attachChild(buildingsLabel);
         guiNode.attachChild(weaponLabel);
+        guiNode.attachChild(weaponIcon);
     }
 
     @Override
@@ -78,6 +96,7 @@ public class HudState extends BaseAppState {
         countdownLabel.removeFromParent();
         buildingsLabel.removeFromParent();
         weaponLabel.removeFromParent();
+        weaponIcon.removeFromParent();
     }
 
     @Override
@@ -109,8 +128,30 @@ public class HudState extends BaseAppState {
 
         WeaponComponent weapon = ed.getComponent(playerId, WeaponComponent.class);
         if (weapon != null) {
-            weaponLabel.setText(HudText.weapon(weapon.weaponType()));
-            weaponLabel.setLocalTranslation(MARGIN, MARGIN + weaponLabel.getPreferredSize().y, 0f);
+            WeaponType type = weapon.weaponType();
+            if (type != shownWeapon) {
+                // Swap the icon only when the equipped weapon changes (setImage reloads the texture).
+                String path = "Icons/" + type.name().toLowerCase(Locale.ROOT) + ".png";
+                Texture tex = assetManager.loadTexture(path);
+                int iw = tex.getImage().getWidth();
+                int ih = tex.getImage().getHeight();
+                // Fit the source into the ICON_SIZE box preserving aspect ratio.
+                float scale = ICON_SIZE / Math.max(iw, ih);
+                iconW = iw * scale;
+                iconH = ih * scale;
+                weaponIcon.setImage(assetManager, path, true);
+                weaponIcon.setWidth(iconW);
+                weaponIcon.setHeight(iconH);
+                shownWeapon = type;
+            }
+
+            // Layout: "Weapon: NAME" text at the bottom-left, then the icon right after it.
+            weaponLabel.setText(HudText.weapon(type));
+            float textH = weaponLabel.getPreferredSize().y;
+            float textW = weaponLabel.getPreferredSize().x;
+            weaponLabel.setLocalTranslation(MARGIN, MARGIN + textH, 0f);
+            // Vertically centre the icon on the text line.
+            weaponIcon.setPosition(MARGIN + textW + 8f, MARGIN + textH / 2f - iconH / 2f);
         }
     }
 
