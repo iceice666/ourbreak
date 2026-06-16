@@ -112,7 +112,7 @@ public class PlayerControlState extends BaseAppState {
                 0f);
 
         droneBoom = loadSound(app, "Sound/drone-boom.wav", 0.8f);
-        swordSlash = loadSound(app, "Sound/sword-slash.wav", 0.4f);
+        swordSlash = loadSound(app, "Sound/sword-slash.wav", 0.2f);
     }
 
     private static AudioNode loadSound(Application app, String asset, float volume) {
@@ -247,16 +247,23 @@ public class PlayerControlState extends BaseAppState {
         if (target == null) {
             return;
         }
-        // DRONE bombs the 3x3 area around the crosshair block; SWORD and GUN hit only that block.
+        // DRONE bombs a 3x3 area; SWORD sweeps a 3-cell row across the view; GUN hits the single block.
         WeaponComponent weapon = ed.getComponent(playerId, WeaponComponent.class);
         WeaponType weaponType = weapon != null ? weapon.weaponType() : WeaponType.SWORD;
-        Collection<EntityId> targets = weaponType == WeaponType.DRONE
-                ? blockEffect.droneAreaTargets(target)
-                : List.of(target);
+        Collection<EntityId> targets = switch (weaponType) {
+            case DRONE -> blockEffect.droneAreaTargets(target);
+            case SWORD -> blockEffect.rowTargets(target, swordSweepAlongX());
+            case GUN -> List.of(target);
+        };
         // WeaponSystem gates on the ATTACK phase and applies the counter-matrix and durability;
         // destroyed entities are removed by the model-view synchronizer.
         weaponSystem.attack(playerId, targets);
         playWeaponSound(weaponType);
+    }
+
+    /** The sword sweeps left-to-right across the view: along X when facing mostly ±Z, else along Z. */
+    private boolean swordSweepAlongX() {
+        return Math.abs(camera.getDirection().z) >= Math.abs(camera.getDirection().x);
     }
 
     private void playWeaponSound(WeaponType weaponType) {

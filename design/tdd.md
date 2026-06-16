@@ -54,11 +54,13 @@ MainMenuState
 | `ModelViewState` | 已有，渲染有 Position + Model 的 entity |
 | `PlayerControlState` | WASD 移動、滑鼠視角、武器切換輸入 |
 | `WeaponSystem` | 攻擊輸入 → raycast 命中判定 → 扣血 |
-| `BlockEffectSystem` | Coral 減速、Shell 反彈、Jellyfish 閃爍 |
+| `BlockEffectSystem` | Coral 減速、Drone 3×3、Sword 3-cell 橫排目標 |
+| `CoralGrowthSystem` | 攻擊階段每 7 秒讓每個活珊瑚在相鄰空洞長回新珊瑚（限攻擊起始的牆 footprint 內）|
+| `PoisonState` | 無人機炸死 Jellyfish → 中毒計時（+5s/上限 10s）、中毒時真方塊彩虹化、中毒條 UI |
 | `NpcBuilderSystem` | BUILD phase：腳本放方塊保護吉祥物 |
 | `RoundSystem` | BUILD/ATTACK 切換、1 分鐘計時器、`advanceRound()`（計時器不自動進回合）|
 | `VictorySystem` | 生存：攻擊階段方塊清空 → 進下一回合；計時器歸零仍有方塊 → Game Over（任一回合）|
-| `HudSystem` | 更新 HUD 顯示 |
+| `HudState` | 更新 HUD 顯示（回合 / 倒數 / 剩餘建築 / 武器）|
 
 ---
 
@@ -67,9 +69,9 @@ MainMenuState
 | 操作 | 輸入 |
 |------|------|
 | 移動 | WASD |
-| 視角 | 滑鼠（捕捉模式）|
+| 視角 | 滑鼠**右鍵拖曳**（dragToRotate，游標保持可見；為了相容 WSLg 不抓取游標）|
 | 攻擊 | 左鍵 |
-| 武器切換 | 1 / 2 / 3 鍵 |
+| 武器切換 | 1 / 2 / 3 鍵，或 Q 循環切換 |
 
 `PlayerControlState` 透過 JME `InputManager` 綁定，讀取輸入後更新 `PositionComponent` 或觸發 `WeaponSystem`。
 
@@ -87,10 +89,10 @@ MainMenuState
 | 方塊 | 耐久 | 特效實作 |
 |------|------|----------|
 | SAND | 1 | 無 |
-| CORAL | 2 | `BlockEffectSystem` 偵測玩家在 1.5 格內 → 降低移動速度 |
+| CORAL | 2 | `CoralGrowthSystem`：ATTACK 第一幀快照整面牆當 footprint；每 7 秒每個活珊瑚在相鄰（6 面）、footprint 內、空的格子長一塊新珊瑚（純函式 `growthTargets` 決定目標，reserved 防同格重複），新珊瑚也會再生但被 footprint 封頂。次要：`BlockEffectSystem` 偵測玩家在 1.5 格內 → 移動 ×0.5 |
 | SHELL | 1 | `WeaponSystem`：被劍/無人機打 → 分裂成 2 個新貝殼（無上限）；槍乾淨清掉 |
 | ROCK | 4 | 無 |
-| JELLYFISH | 1 | `BlockEffectSystem` 在玩家 HUD 套上閃爍 post-process filter |
+| JELLYFISH | 1 | `PoisonState`：偵測「被無人機炸死的 Jellyfish」→ 中毒 +5s（上限 10s）；中毒時把所有真方塊 geometry 重新上隨機彩虹色（每 ~0.12s 換色，與武器無關），歸零時用 `ModelViewState.colorFor` 還原；GUI 畫遞減中毒條。槍/劍清掉不中毒 |
 
 ---
 
@@ -98,25 +100,27 @@ MainMenuState
 
 | 武器 | 攻擊方式 | 實作 |
 |------|----------|------|
-| SWORD | 近戰 AoE | 短距 raycast（2 格）+ 左右各 1 格橫掃，每格各算一次命中 |
+| SWORD | 近戰橫掃 | 準星 raycast 取中心方塊，再經 `BlockEffectSystem.rowTargets` 沿視角橫向 ±1 格展成 3 格，每格各算一次命中 |
 | GUN | 遠距單體 | 長距 raycast（20 格），命中第一個方塊 |
-| DRONE | 範圍轟炸 | 切換 drone 控制模式（俯視相機），確認目標後爆炸傷害 3x3 範圍 |
+| DRONE | 範圍轟炸 | 對準星所在方塊為中心，立即對 3×3 範圍造成傷害（`BlockEffectSystem.droneAreaTargets`，**無獨立俯視操控模式**）|
 
 ### 武器剋制關係（影響 `WeaponSystem` 傷害倍數）
 
 | 武器 | 剋 | 被剋 |
 |------|----|------|
-| Sword | SAND（橫掃清排）| SHELL（近身反彈）、CORAL（減速難近身）|
-| Gun | CORAL（遠距免疫減速）、JELLYFISH（遠距免疫閃爍）| ROCK（單體低效）|
-| Drone | ROCK（範圍破高耐久）、SAND（大範圍清除）| JELLYFISH（操控時閃爍）、SHELL（引爆連鎖反彈）|
+| Sword | SAND（橫掃清排）| SHELL（揮到會分裂雪崩）、CORAL（牆一直長回來、近身又被減速）|
+| Gun | CORAL（一發點掉再生源、斬草除根）、JELLYFISH（清掉不中毒）| ROCK（單體低效）|
+| Drone | ROCK（範圍破高耐久）、SAND（大範圍清除）| JELLYFISH（炸死會中毒，全場彩虹分不出方塊）、SHELL（引爆連鎖反彈）|
 
 **傷害數值（見 `WeaponSystem` 常數）**：實際傷害 = 各武器基礎傷害 × 剋制倍率。基礎傷害 SWORD 1.0 / GUN 8.0 / DRONE 1.0；倍率 剋 ×2.0、被剋 ×0.5、普通 ×1.0。槍基礎傷害極高 → 單體一槍秒殺任何方塊（賣點是單體爆發，弱點是沒有 AoE）。**貝殼不走傷害模型**，改由分裂機制處理。各組合命中次數（耐久 ÷ 傷害）：
 
 | | SAND(1) | CORAL(2) | SHELL(1) | ROCK(4) | JELLY(1) |
 |---|---|---|---|---|---|
-| SWORD | 1 | 4 | 2 | 4 | 1 |
-| GUN | 1 | 1 | 1 | 1 | 1 |
-| DRONE | 1 | 2 | 2 | 2 | 2 |
+| SWORD | 1 | 4 | 分裂 | 4 | 1 |
+| GUN | 1 | 1 | 1（乾淨清） | 1 | 1 |
+| DRONE | 1 | 2 | 分裂 | 2 | 2 |
+
+> SHELL 欄：貝殼不走傷害模型——被 SWORD/DRONE 打會**分裂成 2 個新貝殼（無上限）**，只有 GUN 能一發乾淨清掉。
 
 ---
 
@@ -172,14 +176,15 @@ NPC 為純固定腳本，不使用 pathfinding。
 | 左上 | 回合數（Round X，無上限）|
 | 右上 | 剩餘時間倒數（ATTACK phase 顯示）|
 | 中上 | 剩餘建築數量（ATTACK phase 顯示）|
+| 左下 | 當前武器名稱 |
+| 下方中央 | 中毒條（`PoisonState`，僅中毒時顯示）|
 
 ### 其他畫面
 
 | 畫面 | 元素 |
 |------|------|
-| MainMenuState | Start Game、Exit |
 | MainMenuState | Start Game、Exit（玩家固定為 Openclaw）|
-| GameEndState | Win / Lose 文字、Restart |
+| GameEndState | `GAME OVER` + `Reached Round N`、Restart（無 Win 終局）|
 
 ---
 
@@ -191,7 +196,8 @@ NPC 為純固定腳本，不使用 pathfinding。
 |----------|----------|
 | `BlockTest` | 5 種方塊耐久值、超額傷害 clamp 到 0 |
 | `WeaponTest` | 3 種武器命中傷害計算、剋制倍數 |
-| `BlockEffectTest` | Coral 減速觸發條件、Shell 反彈條件、Jellyfish 觸發條件 |
+| `BlockEffectTest` | Coral 減速觸發條件、Drone 3×3 與 Sword 3-cell 橫排目標展開（滿排／稀疏／孤立）|
+| `CoralGrowthTest` | `growthTargets` 純函式：補相鄰空洞、被包住不長、不長出 footprint 外、兩珊瑚不搶同格 |
 | `RoundSystemTest` | BUILD→ATTACK 切換、計時器倒數、time clamp 到 0 |
 | `VictorySystemTest` | 方塊清空 → 進下一回合（存活）、計時器歸零仍有方塊 → Game Over（任一回合）|
 | `NpcBuilderTest` | 各 round 放置正確方塊種類 |

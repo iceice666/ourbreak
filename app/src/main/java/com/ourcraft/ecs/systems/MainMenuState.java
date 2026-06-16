@@ -63,6 +63,9 @@ public class MainMenuState extends BaseAppState {
 
     @Override
     protected void onEnable() {
+        // Keep the OS cursor visible on the menu (WSLg hides it, and returning from gameplay can
+        // leave it hidden) so the Start Game / Exit buttons stay clickable.
+        inputManager.setCursorVisible(true);
         guiNode.attachChild(panel);
         inputManager.addMapping(START, new KeyTrigger(KeyInput.KEY_RETURN));
         inputManager.addMapping(EXIT, new KeyTrigger(KeyInput.KEY_ESCAPE));

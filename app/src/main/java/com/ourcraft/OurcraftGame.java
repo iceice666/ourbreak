@@ -18,6 +18,9 @@ public class OurcraftGame extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         flyCam.setEnabled(false);
+        // WSLg hides the OS cursor as soon as it enters the window unless we explicitly keep it
+        // visible; without this the Lemur menu buttons are unclickable (no pointer to click with).
+        inputManager.setCursorVisible(true);
 
         // Lemur GUI bootstrap (default Java styling — no Groovy glass style).
         GuiGlobals.initialize(this);

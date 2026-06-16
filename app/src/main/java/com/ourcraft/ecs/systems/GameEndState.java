@@ -64,6 +64,8 @@ public class GameEndState extends BaseAppState {
 
     @Override
     protected void onEnable() {
+        // Restore the cursor (gameplay can leave it hidden under WSLg) so Restart is clickable.
+        inputManager.setCursorVisible(true);
         guiNode.attachChild(panel);
         inputManager.addMapping(RESTART, new KeyTrigger(KeyInput.KEY_RETURN));
         inputManager.addListener(shortcuts, RESTART);

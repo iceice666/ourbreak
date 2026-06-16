@@ -100,6 +100,35 @@ public class BlockEffectSystem {
         return targets;
     }
 
+    /** Block entities in a 3-cell horizontal row around the center along the chosen axis (X or Z). */
+    public List<EntityId> rowTargets(EntityId centerBlockId, boolean alongX) {
+        Objects.requireNonNull(centerBlockId, "centerBlockId");
+
+        PositionComponent center = ed.getComponent(centerBlockId, PositionComponent.class);
+        if (center == null) {
+            return List.of();
+        }
+
+        positionedBlocks.applyChanges();
+        Map<PositionComponent, EntityId> byPosition = new HashMap<>();
+        for (Entity block : positionedBlocks) {
+            byPosition.put(block.get(PositionComponent.class), block.getId());
+        }
+
+        List<EntityId> targets = new ArrayList<>(3);
+        for (int d = -1; d <= 1; d++) {
+            PositionComponent cell = new PositionComponent(
+                    center.x() + (alongX ? d : 0),
+                    center.y(),
+                    center.z() + (alongX ? 0 : d));
+            EntityId id = byPosition.get(cell);
+            if (id != null) {
+                targets.add(id);
+            }
+        }
+        return targets;
+    }
+
     /** Number of Jellyfish placement flicker triggers recorded so far (consumed by the HUD). */
     public int flickerTriggerCount() {
         return flickerTriggerCount;

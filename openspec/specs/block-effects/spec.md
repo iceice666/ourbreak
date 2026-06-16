@@ -2,12 +2,10 @@
 
 ## Purpose
 
-Block effects define the per-block special-effect triggers that give the game tactical depth: an `EffectComponent` marker derived from block type, the Coral proximity slow, the Shell on-destroy reflect against a decoupled `PlayerHealthComponent`, the Jellyfish placement flicker trigger, and the Drone 3×3 area expansion. All magnitudes are placeholders tuned in M7.
+Block effects define the per-block special-effect triggers that give the game tactical depth: an `EffectComponent` marker derived from block type, the Coral proximity slow, the Coral regrowth (the wall heals itself while a Coral lives), the Jellyfish placement flicker trigger, and the Drone 3×3 / Sword 3-cell target expansions. (Shell defends by splitting under the wrong weapon, handled in `WeaponSystem`; there is no player health.) All magnitudes are placeholders tuned in M7.
 
 ---
-
 ## Requirements
-
 ### Requirement: Effect marker assignment
 Each placed block SHALL carry an `EffectComponent` whose `effectType` is derived from its block type — Coral→SLOW, Shell→REFLECT, Jellyfish→FLICKER — and Sand and Rock blocks SHALL receive no `EffectComponent`.
 
@@ -31,6 +29,23 @@ During the ATTACK phase, the block-effect system SHALL compute a movement slow f
 #### Scenario: Player outside range
 - **WHEN** no Coral block is within 1.5 grid cells of the player
 - **THEN** the computed slow factor is exactly 1.0
+
+---
+
+### Requirement: Coral regrowth
+During the ATTACK phase the coral-growth system SHALL snapshot the wall's occupied cells once (the footprint) and, every 7 seconds, grow a new Coral block for each living Coral into one adjacent face-neighbour cell that is empty and inside the footprint, reserving each chosen cell so two Corals never grow into the same cell. A Coral with no empty in-footprint neighbour SHALL grow nothing, and no Coral SHALL grow outside the footprint (so regrowth is capped at the original wall).
+
+#### Scenario: Coral heals an adjacent hole
+- **WHEN** a footprint cell adjacent to a living Coral is empty at a regrowth tick
+- **THEN** a new Coral block is grown into that cell
+
+#### Scenario: Surrounded Coral does nothing
+- **WHEN** every face-neighbour of a Coral is occupied
+- **THEN** no new Coral is grown for it
+
+#### Scenario: Growth stays inside the footprint
+- **WHEN** a Coral's only empty adjacent cell is outside the snapshotted footprint
+- **THEN** no new Coral is grown (the wall cannot expand beyond its original cells)
 
 ---
 
@@ -61,3 +76,19 @@ The block-effect system SHALL expand a single center block into the block entiti
 #### Scenario: Isolated block
 - **WHEN** a center block has no occupied neighbors
 - **THEN** the expansion returns only the center block
+
+### Requirement: Sword row expansion
+The block-effect system SHALL expand a single center block into the block entities occupying a 3-cell horizontal row centered on it along a given grid axis (the center plus its two neighbours one step to each side on that axis at the same height), including only cells that contain a block.
+
+#### Scenario: Full row
+- **WHEN** both side cells along the chosen axis are occupied by blocks
+- **THEN** the expansion returns all three block entities
+
+#### Scenario: Sparse row
+- **WHEN** only one side cell along the axis is occupied
+- **THEN** the expansion returns the center plus that one occupied neighbour
+
+#### Scenario: Isolated center
+- **WHEN** neither side cell is occupied
+- **THEN** the expansion returns only the center block
+

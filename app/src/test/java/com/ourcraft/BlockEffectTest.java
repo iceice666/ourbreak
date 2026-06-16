@@ -116,6 +116,39 @@ class BlockEffectTest {
         assertEquals(List.of(center), system.droneAreaTargets(center));
     }
 
+    // ── Sword row expansion ──────────────────────────────────────────────────
+
+    @Test
+    void swordRowExpandsToFullRow() {
+        EntityId center = createBlock(SAND, 0f, 0f);
+        createBlock(SAND, 1f, 0f);
+        createBlock(SAND, -1f, 0f);
+        assertEquals(3, system.rowTargets(center, true).size());
+    }
+
+    @Test
+    void swordRowExpandsToOccupiedSideOnly() {
+        EntityId center = createBlock(SAND, 0f, 0f);
+        createBlock(SAND, 1f, 0f);
+        List<EntityId> targets = system.rowTargets(center, true);
+        assertEquals(2, targets.size());
+        assertTrue(targets.contains(center));
+    }
+
+    @Test
+    void swordRowIsolatedReturnsOnlyCenter() {
+        EntityId center = createBlock(SAND, 0f, 0f);
+        assertEquals(List.of(center), system.rowTargets(center, true));
+    }
+
+    @Test
+    void swordRowAlongZAxis() {
+        EntityId center = createBlock(SAND, 0f, 0f);
+        createBlock(SAND, 0f, 1f);
+        createBlock(SAND, 0f, -1f);
+        assertEquals(3, system.rowTargets(center, false).size());
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private EntityId createBlock(BlockType type, float x, float z) {

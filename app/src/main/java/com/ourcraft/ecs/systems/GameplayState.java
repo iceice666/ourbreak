@@ -26,10 +26,12 @@ public class GameplayState extends BaseAppState {
     private ModelViewState modelView;
     private EnvironmentState environment;
     private HitFeedbackState hitFeedback;
+    private PoisonState poison;
     private RoundSystem roundSystem;
     private VictorySystem victorySystem;
     private NpcBuilderSystem npcBuilder;
     private BlockEffectSystem blockEffect;
+    private CoralGrowthSystem coralGrowth;
     private PlayerControlState playerControl;
     private HudState hud;
 
@@ -65,12 +67,16 @@ public class GameplayState extends BaseAppState {
         victorySystem = new VictorySystem(ed, gameStateId, roundSystem);
         npcBuilder = new NpcBuilderSystem(ed, roundSystem, mascotId);
         blockEffect = new BlockEffectSystem(ed, gameStateId);
+        coralGrowth = new CoralGrowthSystem(ed, gameStateId);
 
         playerControl = new PlayerControlState(ed, playerId, gameStateId, blockEffect);
         getStateManager().attach(playerControl);
 
         hud = new HudState(ed, gameStateId, playerId);
         getStateManager().attach(hud);
+
+        poison = new PoisonState(ed, playerId);
+        getStateManager().attach(poison);
 
         app.getCamera().setLocation(new Vector3f(0f, 1.5f, 8f));
         app.getCamera().lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
@@ -80,12 +86,14 @@ public class GameplayState extends BaseAppState {
     protected void cleanup(Application app) {
         getStateManager().detach(hud);
         getStateManager().detach(playerControl);
+        getStateManager().detach(poison);
         getStateManager().detach(hitFeedback);
         getStateManager().detach(environment);
         getStateManager().detach(modelView);
         victorySystem.close();
         npcBuilder.close();
         blockEffect.close();
+        coralGrowth.close();
         ed.close();
     }
 
@@ -107,6 +115,7 @@ public class GameplayState extends BaseAppState {
         roundSystem.update(tpf);
         victorySystem.update(tpf);
         blockEffect.update(tpf);
+        coralGrowth.update(tpf);
 
         Result result = ed.getComponent(gameStateId, GameResultComponent.class).result();
         if (result != Result.IN_PROGRESS) {
