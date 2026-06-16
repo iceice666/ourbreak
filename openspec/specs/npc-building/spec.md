@@ -42,22 +42,24 @@ The NPC builder SHALL place a per-round number of new blocks given by `min(16 + 
 
 ---
 
-### Requirement: Mascot-relative placement priority
-The NPC builder SHALL require a valid mascot position, place blocks on the mascot's XZ grid plane, preserve the mascot's
-Y coordinate, define positive Z as front, and search deterministic concentric rings from the mascot outward.
+### Requirement: Mascot-relative 3D wall placement priority
+The NPC builder SHALL require a valid mascot position, define positive Z as front, and build a 3D concentric wall: for
+each ring radius outward from the mascot, it SHALL fill that ring's ground layer, then stack the same ring up to a fixed
+wall height before expanding to the next radius. The candidate order SHALL be ring radius (outer loop), then layer from
+the mascot's Y upward, then the within-ring order.
 
-Within each ring, the builder SHALL prioritize front center, left and right centers, the remaining front edge in
+Within each ring layer, the builder SHALL prioritize front center, left and right centers, the remaining front edge in
 symmetric pairs, the remaining side edges from front to rear in symmetric pairs, and the remaining rear edge ending at
 rear center.
 
-#### Scenario: First-ring placement order
+#### Scenario: First-ring ground-layer order
 - **WHEN** the mascot is at `(0, 0, 0)` and the first ring is unoccupied
 - **THEN** the first eight positions are `(0, 0, 1)`, `(-1, 0, 0)`, `(1, 0, 0)`, `(-1, 0, 1)`, `(1, 0, 1)`,
-  `(-1, 0, -1)`, `(1, 0, -1)`, and `(0, 0, -1)` in that order
+  `(-1, 0, -1)`, `(1, 0, -1)`, and `(0, 0, -1)` in that order (all at the mascot's Y)
 
 #### Scenario: Translate positions from the mascot
 - **WHEN** the mascot is at a non-origin grid position
-- **THEN** every generated offset is added to the mascot position and every placed block uses the mascot's Y coordinate
+- **THEN** every generated offset is added to the mascot position; stacked layers add to the mascot's Y coordinate
 
 #### Scenario: Missing mascot position
 - **WHEN** an eligible BUILD update runs while the mascot lacks `PositionComponent`
@@ -73,9 +75,9 @@ SHALL continue searching outward through concentric rings, and SHALL leave all e
 - **WHEN** the highest-priority candidate position already contains a block
 - **THEN** the next new block is placed at the first unoccupied candidate position
 
-#### Scenario: Fully occupied first ring
-- **WHEN** all eight first-ring positions are occupied
-- **THEN** the next new block is placed at front center of the second ring
+#### Scenario: Fully occupied first-ring ground layer stacks up
+- **WHEN** all eight first-ring ground-layer positions are occupied
+- **THEN** the next new block stacks up to front center of the first ring one layer higher (before expanding outward)
 
 #### Scenario: Preserve surviving defenses
 - **WHEN** a new BUILD phase starts with blocks surviving from an earlier round

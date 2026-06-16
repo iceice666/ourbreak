@@ -158,8 +158,8 @@ class NpcBuilderTest {
     }
 
     @Test
-    void fullyOccupiedFirstRingPlacesNextBlockAtSecondRingFrontCenter() {
-        List<PositionComponent> firstRing = List.of(
+    void fullyOccupiedFirstRingGroundLayerStacksUpward() {
+        List<PositionComponent> firstRingGround = List.of(
                 new PositionComponent(0.0f, 0.0f, 1.0f),
                 new PositionComponent(-1.0f, 0.0f, 0.0f),
                 new PositionComponent(1.0f, 0.0f, 0.0f),
@@ -168,11 +168,12 @@ class NpcBuilderTest {
                 new PositionComponent(-1.0f, 0.0f, -1.0f),
                 new PositionComponent(1.0f, 0.0f, -1.0f),
                 new PositionComponent(0.0f, 0.0f, -1.0f));
-        firstRing.forEach(position -> createBlock(SHELL, position));
+        firstRingGround.forEach(position -> createBlock(SHELL, position));
 
         builder.update(0.0f);
 
-        assertEquals(SAND, blockAt(new PositionComponent(0.0f, 0.0f, 2.0f)).block().blockType());
+        // 3D wall: with the first ring's ground layer full, the next block stacks up to front-centre y=1.
+        assertEquals(SAND, blockAt(new PositionComponent(0.0f, 1.0f, 1.0f)).block().blockType());
     }
 
     @Test

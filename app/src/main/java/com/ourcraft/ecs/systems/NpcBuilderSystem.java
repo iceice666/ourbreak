@@ -29,6 +29,8 @@ public class NpcBuilderSystem {
     public static final int BASE_BLOCKS = 16;
     public static final int BLOCKS_STEP = 8;
     public static final int MAX_BLOCKS = 48;
+    /** Blocks stack this many high per grid cell before the wall expands outward (3D fortress). */
+    public static final int WALL_HEIGHT = 3;
 
     private final EntityData ed;
     private final RoundSystem roundSystem;
@@ -113,20 +115,23 @@ public class NpcBuilderSystem {
             occupied.add(block.get(PositionComponent.class));
         }
 
+        // 3D concentric wall: fill a ring all around, stack it WALL_HEIGHT tall, then expand outward.
         int candidatesToCheck = occupied.size() + 1;
         int checked = 0;
         for (int radius = 1; checked < candidatesToCheck; radius++) {
-            for (GridOffset offset : ringOffsets(radius)) {
-                PositionComponent candidate = new PositionComponent(
-                        mascotPosition.x() + offset.x(),
-                        mascotPosition.y(),
-                        mascotPosition.z() + offset.z());
-                if (!occupied.contains(candidate)) {
-                    return candidate;
-                }
-                checked++;
-                if (checked == candidatesToCheck) {
-                    break;
+            for (int layer = 0; layer < WALL_HEIGHT && checked < candidatesToCheck; layer++) {
+                for (GridOffset offset : ringOffsets(radius)) {
+                    PositionComponent candidate = new PositionComponent(
+                            mascotPosition.x() + offset.x(),
+                            mascotPosition.y() + layer,
+                            mascotPosition.z() + offset.z());
+                    if (!occupied.contains(candidate)) {
+                        return candidate;
+                    }
+                    checked++;
+                    if (checked == candidatesToCheck) {
+                        break;
+                    }
                 }
             }
         }
