@@ -3,6 +3,8 @@ package com.ourcraft.ecs.systems;
 import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.BaseAppState;
+import com.jme3.audio.AudioData;
+import com.jme3.audio.AudioNode;
 import com.jme3.collision.CollisionResult;
 import com.jme3.collision.CollisionResults;
 import com.jme3.font.BitmapFont;
@@ -71,6 +73,8 @@ public class PlayerControlState extends BaseAppState {
     private SimpleApplication simpleApp;
     private FlyByCamera flyCam;
     private BitmapText crosshair;
+    private AudioNode droneBoom;
+    private AudioNode swordSlash;
 
     private boolean looking;
     private float yaw;
@@ -106,6 +110,21 @@ public class PlayerControlState extends BaseAppState {
                 camera.getWidth() / 2f - crosshair.getLineWidth() / 2f,
                 camera.getHeight() / 2f + crosshair.getLineHeight() / 2f,
                 0f);
+
+        droneBoom = loadSound(app, "Sound/drone-boom.wav", 0.8f);
+        swordSlash = loadSound(app, "Sound/sword-slash.wav", 0.4f);
+    }
+
+    private static AudioNode loadSound(Application app, String asset, float volume) {
+        try {
+            AudioNode node = new AudioNode(app.getAssetManager(), asset, AudioData.DataType.Buffer);
+            node.setPositional(false);
+            node.setVolume(volume);
+            return node;
+        } catch (RuntimeException e) {
+            System.err.println("[audio] sound unavailable (" + asset + "): " + e.getMessage());
+            return null;
+        }
     }
 
     @Override
@@ -229,12 +248,25 @@ public class PlayerControlState extends BaseAppState {
         }
         // DRONE bombs the 3x3 area around the crosshair block; SWORD and GUN hit only that block.
         WeaponComponent weapon = ed.getComponent(playerId, WeaponComponent.class);
-        Collection<EntityId> targets = weapon != null && weapon.weaponType() == WeaponType.DRONE
+        WeaponType weaponType = weapon != null ? weapon.weaponType() : WeaponType.SWORD;
+        Collection<EntityId> targets = weaponType == WeaponType.DRONE
                 ? blockEffect.droneAreaTargets(target)
                 : List.of(target);
         // WeaponSystem gates on the ATTACK phase and applies the counter-matrix and durability;
         // destroyed entities are removed by the model-view synchronizer.
         weaponSystem.attack(playerId, targets);
+        playWeaponSound(weaponType);
+    }
+
+    private void playWeaponSound(WeaponType weaponType) {
+        AudioNode sound = switch (weaponType) {
+            case SWORD -> swordSlash;
+            case DRONE -> droneBoom;
+            case GUN -> null; // gun sound TBD
+        };
+        if (sound != null) {
+            sound.playInstance();
+        }
     }
 
     private EntityId pickBlockUnderCrosshair() {

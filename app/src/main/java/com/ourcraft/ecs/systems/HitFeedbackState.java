@@ -80,24 +80,34 @@ public class HitFeedbackState extends BaseAppState {
     public void update(float tpf) {
         blocks.applyChanges();
 
+        boolean hitThisFrame = false;
         for (Entity entity : blocks) {
             EntityId id = entity.getId();
             resolveGeometry(id);
             float durability = entity.get(BlockComponent.class).durability();
             Float previous = lastDurability.get(id);
             if (previous != null && durability < previous) {
-                flashRemaining.put(id, FLASH_DURATION);
-                if (hitSound != null) {
-                    hitSound.playInstance();
-                }
+                flashRemaining.put(id, FLASH_DURATION); // flash/punch is per block
+                hitThisFrame = true;                    // but the sound plays at most once per frame
             }
             lastDurability.put(id, durability);
         }
 
-        // Drop tracking for blocks that are gone.
-        geometries.keySet().removeIf(id -> blocks.getEntity(id) == null);
-        lastDurability.keySet().removeIf(id -> blocks.getEntity(id) == null);
-        baseColors.keySet().removeIf(id -> blocks.getEntity(id) == null);
+        // Destroyed blocks (e.g. 1-hit Sand) leave the set without a surviving durability drop —
+        // count them as hits too, and drop their tracking.
+        for (Entity removed : blocks.getRemovedEntities()) {
+            EntityId id = removed.getId();
+            geometries.remove(id);
+            lastDurability.remove(id);
+            baseColors.remove(id);
+            flashRemaining.remove(id);
+            hitThisFrame = true;
+        }
+
+        // One hit sound per frame, so an AoE that damages/destroys many blocks doesn't stack into a roar.
+        if (hitThisFrame && hitSound != null) {
+            hitSound.playInstance();
+        }
 
         animateFlashes(tpf);
     }
