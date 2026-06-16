@@ -22,8 +22,8 @@ import com.simsilica.es.base.DefaultEntityData;
  */
 public class GameplayState extends BaseAppState {
 
-    /** Player starting hit points. Placeholder — tuned in M7. */
-    private static final float PLAYER_MAX_HEALTH = 10f;
+    /** Player starting hit points (GDD §Mechanics tuning). */
+    private static final float PLAYER_MAX_HEALTH = 100f;
 
     private EntityData ed;
     private ModelViewState modelView;

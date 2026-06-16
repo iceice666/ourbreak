@@ -32,8 +32,11 @@ import static com.ourcraft.ecs.components.BlockComponent.BlockType.SHELL;
 import static com.ourcraft.ecs.components.WeaponComponent.WeaponType.DRONE;
 import static com.ourcraft.ecs.components.WeaponComponent.WeaponType.GUN;
 import static com.ourcraft.ecs.components.WeaponComponent.WeaponType.SWORD;
+import static com.ourcraft.ecs.systems.WeaponSystem.DRONE_BASE_DAMAGE;
+import static com.ourcraft.ecs.systems.WeaponSystem.GUN_BASE_DAMAGE;
 import static com.ourcraft.ecs.systems.WeaponSystem.NEUTRAL_MULTIPLIER;
 import static com.ourcraft.ecs.systems.WeaponSystem.STRONG_MULTIPLIER;
+import static com.ourcraft.ecs.systems.WeaponSystem.SWORD_BASE_DAMAGE;
 import static com.ourcraft.ecs.systems.WeaponSystem.WEAK_MULTIPLIER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -215,7 +218,16 @@ class WeaponTest {
 
         system.attack(player, List.of(target));
 
-        assertEquals(10.0f - multiplier, block(target).durability());
+        float expectedDamage = baseDamage(weaponType) * multiplier;
+        assertEquals(10.0f - expectedDamage, block(target).durability());
+    }
+
+    private static float baseDamage(WeaponType weaponType) {
+        return switch (weaponType) {
+            case SWORD -> SWORD_BASE_DAMAGE;
+            case GUN -> GUN_BASE_DAMAGE;
+            case DRONE -> DRONE_BASE_DAMAGE;
+        };
     }
 
     private static Stream<Class<? extends EntityComponent>> requiredGameStateComponentTypes() {

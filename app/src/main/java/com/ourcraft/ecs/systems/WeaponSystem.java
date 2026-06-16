@@ -18,7 +18,12 @@ import java.util.Objects;
 
 public class WeaponSystem {
 
-    public static final float BASE_DAMAGE = 1.0f;
+    // Per-weapon base damage (M7 tuning): each weapon has its own cadence/power, modulated by the
+    // counter matrix. See design/gdd.md §Mechanics.
+    public static final float SWORD_BASE_DAMAGE = 1.0f;
+    public static final float GUN_BASE_DAMAGE = 2.0f;
+    public static final float DRONE_BASE_DAMAGE = 1.0f;
+
     public static final float STRONG_MULTIPLIER = 2.0f;
     public static final float WEAK_MULTIPLIER = 0.5f;
     public static final float NEUTRAL_MULTIPLIER = 1.0f;
@@ -56,7 +61,8 @@ public class WeaponSystem {
                 continue;
             }
 
-            float damage = BASE_DAMAGE * multiplier(weapon.weaponType(), block.blockType());
+            float damage = baseDamage(weapon.weaponType())
+                    * multiplier(weapon.weaponType(), block.blockType());
             BlockComponent damagedBlock = block.applyDamage(damage);
             if (damagedBlock.durability() == 0.0f) {
                 ed.removeEntity(targetId);
@@ -73,6 +79,14 @@ public class WeaponSystem {
                     "game-state entity must have a " + componentType.getSimpleName());
         }
         return component;
+    }
+
+    private float baseDamage(WeaponType weaponType) {
+        return switch (weaponType) {
+            case SWORD -> SWORD_BASE_DAMAGE;
+            case GUN -> GUN_BASE_DAMAGE;
+            case DRONE -> DRONE_BASE_DAMAGE;
+        };
     }
 
     private float multiplier(WeaponType weaponType, BlockType blockType) {

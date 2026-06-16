@@ -24,12 +24,14 @@ import java.util.Objects;
  */
 public class BlockEffectSystem {
 
-    /** Movement multiplier applied while within range of a Coral block. Placeholder — tuned in M7. */
+    /** Movement multiplier while within range of a Coral block — half speed (GDD §Mechanics). */
     public static final float CORAL_SLOW_FACTOR = 0.5f;
     /** Coral slow range in grid cells (GDD: 1.5). */
     public static final float CORAL_RANGE = 1.5f;
-    /** Health removed per destroyed Shell block. Placeholder — tuned in M7. */
-    public static final float SHELL_REFLECT_DAMAGE = 1.0f;
+    /** Health removed per destroyed Shell block (GDD §Mechanics). */
+    public static final float SHELL_REFLECT_DAMAGE = 20.0f;
+    /** Jellyfish vision-flicker duration in seconds — reserved for the flicker visual (GDD §Mechanics). */
+    public static final float JELLYFISH_FLICKER_SECONDS = 2.0f;
 
     private final EntityData ed;
     private final EntityId playerId;

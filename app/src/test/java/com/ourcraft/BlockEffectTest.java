@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BlockEffectTest {
 
-    private static final float PLAYER_MAX_HEALTH = 10f;
+    private static final float PLAYER_MAX_HEALTH = 100f;
 
     private EntityData ed;
     private EntityId gameStateId;

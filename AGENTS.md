@@ -85,8 +85,8 @@ Full milestone breakdown: `design/milestones.md`. Critical path: M1 → M2 → M
 | M4 | First-person playable — AppState machine, PlayerControlState, raycast wiring | ✅ done |
 | M5 | Block special effects — BlockEffectSystem, EffectComponent | ✅ done |
 | M6 | UI / HUD — HudState, Lemur menus | ✅ done |
-| M7 | Balancing — fill all TBD constants, retune tests | ⬜ next |
-| M8 | Stretch — playable builder, real 3D art (optional) | ⬜ |
+| M7 | Balancing — fill all TBD constants, retune tests | ✅ done |
+| M8 | Stretch — playable builder, real 3D art (optional) | ⬜ next |
 
 ---
 
