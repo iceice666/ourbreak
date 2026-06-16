@@ -142,7 +142,7 @@ NPC 為純固定腳本，不使用 pathfinding。
 | 4 | ROCK + JELLYFISH |
 | 5+ | ROCK + SHELL + JELLYFISH + CORAL（全餐）|
 
-每 round 方塊數 = `min(16 + (round-1)×8, 48)`。`NpcBuilderSystem` 在 BUILD phase 放完方塊後觸發切換至 ATTACK phase。
+每 round 方塊數：R1–4 = `16+(r-1)×8`；R5+（無上限）= `round(ρ(r)×RoundSystem.attackSecondsForRound(r))`,其中 `ρ(r)=RATE_MAX−(RATE_MAX−RATE_BASE)×RATE_DECAY^(r−5)`（0.80→漸近 1.20,decay 0.85）。攻擊時間 `attackSecondsForRound(r)`：R≤5 = 60,之後 `60+2×(r−5)`（無上限）。`NpcBuilderSystem` 在 BUILD phase 放完方塊後觸發切換至 ATTACK phase。難度曲線由 `DifficultyCurveTest` 鎖定（永遠遞增、增量不暴衝、要求速率 < 漸近上限）。
 
 ---
 
@@ -203,3 +203,4 @@ NPC 為純固定腳本，不使用 pathfinding。
 | `RoundSystemTest` | BUILD→ATTACK 切換、計時器倒數、time clamp 到 0 |
 | `VictorySystemTest` | 方塊清空 → 進下一回合（存活）、計時器歸零仍有方塊 → Game Over（任一回合）|
 | `NpcBuilderTest` | 各 round 放置正確方塊種類 |
+| `DifficultyCurveTest` | 無限難度曲線：教學斜坡 + R5 接續 48、方塊永遠遞增、增量不暴衝、要求速率 < 漸近上限 |

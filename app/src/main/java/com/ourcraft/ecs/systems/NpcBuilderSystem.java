@@ -25,10 +25,17 @@ import java.util.Set;
 
 public class NpcBuilderSystem {
 
-    // Endless escalation: the wall grows each round, then plateaus at a 60 s-survivable ceiling.
+    // Onboarding ramp (rounds 1–4): a flat +8 blocks per round while the mechanics are introduced.
     public static final int BASE_BLOCKS = 16;
     public static final int BLOCKS_STEP = 8;
-    public static final int MAX_BLOCKS = 48;
+    /** Round at which the endless required-clear-rate ramp takes over (continuous with round-5 = 48). */
+    public static final int ENDLESS_FROM_ROUND = 5;
+    /** Required clear-rate (blocks/sec) at the start of the endless ramp. */
+    private static final double RATE_BASE = 0.80;
+    /** Asymptotic required clear-rate the ramp approaches but never reaches (kept below the human max). */
+    private static final double RATE_MAX = 1.20;
+    /** Per-round decay of the remaining rate margin — shrinking increments, so difficulty never spikes. */
+    private static final double RATE_DECAY = 0.85;
     /** Blocks stack this many high per grid cell before the wall expands outward (3D fortress). */
     public static final int WALL_HEIGHT = 3;
 
@@ -166,11 +173,22 @@ public class NpcBuilderSystem {
         return offsets;
     }
 
+    /**
+     * Blocks the NPC builds for a round. Rounds 1–4 are the onboarding ramp (16/24/32/40). From round 5
+     * the wall grows without bound: the <em>required clear-rate</em> {@code ρ(r)} rises asymptotically
+     * toward {@link #RATE_MAX} with shrinking increments (so it never spikes and is always theoretically
+     * survivable), the attack time grows slowly ({@link RoundSystem#attackSecondsForRound}), and the
+     * count is {@code round(ρ(r) × time(r))} — so the wall keeps getting bigger every round forever.
+     */
     public static int blocksForRound(int round) {
         if (round < 1) {
             throw new IllegalStateException("no block quota for round " + round);
         }
-        return Math.min(BASE_BLOCKS + (round - 1) * BLOCKS_STEP, MAX_BLOCKS);
+        if (round < ENDLESS_FROM_ROUND) {
+            return BASE_BLOCKS + (round - 1) * BLOCKS_STEP;
+        }
+        double rate = RATE_MAX - (RATE_MAX - RATE_BASE) * Math.pow(RATE_DECAY, round - ENDLESS_FROM_ROUND);
+        return (int) Math.round(rate * RoundSystem.attackSecondsForRound(round));
     }
 
     private List<BlockType> blockScript(int round) {
