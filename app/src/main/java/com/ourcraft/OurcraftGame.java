@@ -5,6 +5,7 @@ import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
+import com.ourcraft.ecs.systems.AudioState;
 import com.ourcraft.ecs.systems.MainMenuState;
 
 public class OurcraftGame extends SimpleApplication {
@@ -23,6 +24,7 @@ public class OurcraftGame extends SimpleApplication {
         rootNode.addLight(sun);
         rootNode.addLight(new AmbientLight(ColorRGBA.White.mult(0.3f)));
 
+        stateManager.attach(new AudioState());
         stateManager.attach(new MainMenuState());
     }
 }
