@@ -56,9 +56,24 @@ public class ModelViewState extends BaseAppState {
 
     private Spatial createSpatial(ModelComponent model) {
         Geometry geom = new Geometry(model.modelId(), new Box(0.5f, 0.5f, 0.5f));
-        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.Cyan);
+        // Placeholder art: colour each block by type so the counter-matrix is readable (real models = M8).
+        ColorRGBA color = colorFor(model.modelId());
+        Material mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
+        mat.setBoolean("UseMaterialColors", true);
+        mat.setColor("Diffuse", color);
+        mat.setColor("Ambient", color);
         geom.setMaterial(mat);
         return geom;
+    }
+
+    private static ColorRGBA colorFor(String modelId) {
+        return switch (modelId) {
+            case "sand-block" -> new ColorRGBA(0.85f, 0.78f, 0.45f, 1f);      // sandy tan
+            case "coral-block" -> new ColorRGBA(0.95f, 0.42f, 0.6f, 1f);      // coral pink
+            case "shell-block" -> new ColorRGBA(0.95f, 0.92f, 0.85f, 1f);     // shell cream
+            case "rock-block" -> new ColorRGBA(0.38f, 0.4f, 0.43f, 1f);       // slate grey
+            case "jellyfish-block" -> new ColorRGBA(0.45f, 0.5f, 0.95f, 1f);  // jelly blue
+            default -> ColorRGBA.Cyan;
+        };
     }
 }

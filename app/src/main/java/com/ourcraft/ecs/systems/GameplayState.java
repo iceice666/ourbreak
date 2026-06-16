@@ -28,6 +28,7 @@ public class GameplayState extends BaseAppState {
     private EntityData ed;
     private ModelViewState modelView;
     private EnvironmentState environment;
+    private HitFeedbackState hitFeedback;
     private RoundSystem roundSystem;
     private VictorySystem victorySystem;
     private NpcBuilderSystem npcBuilder;
@@ -48,6 +49,9 @@ public class GameplayState extends BaseAppState {
 
         environment = new EnvironmentState();
         getStateManager().attach(environment);
+
+        hitFeedback = new HitFeedbackState(ed);
+        getStateManager().attach(hitFeedback);
 
         roundSystem = new RoundSystem(ed);
         roundSystem.initialize();
@@ -80,6 +84,7 @@ public class GameplayState extends BaseAppState {
     protected void cleanup(Application app) {
         getStateManager().detach(hud);
         getStateManager().detach(playerControl);
+        getStateManager().detach(hitFeedback);
         getStateManager().detach(environment);
         getStateManager().detach(modelView);
         victorySystem.close();
