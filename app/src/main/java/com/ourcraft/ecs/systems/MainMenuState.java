@@ -7,8 +7,9 @@ import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.renderer.Camera;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
-import com.simsilica.lemur.Button;
 import com.simsilica.lemur.Container;
 import com.simsilica.lemur.Label;
 
@@ -26,6 +27,8 @@ public class MainMenuState extends BaseAppState {
     private SimpleApplication simpleApp;
     private InputManager inputManager;
     private Node guiNode;
+    private Camera camera;
+    private Geometry scrim;
     private Container panel;
 
     private final ActionListener shortcuts = (name, isPressed, tpf) -> {
@@ -44,17 +47,34 @@ public class MainMenuState extends BaseAppState {
         this.simpleApp = (SimpleApplication) app;
         this.inputManager = app.getInputManager();
         this.guiNode = simpleApp.getGuiNode();
+        this.camera = app.getCamera();
+
+        scrim = UiTheme.scrim(app.getAssetManager(), camera.getWidth(), camera.getHeight());
 
         panel = new Container();
-        Label title = panel.addChild(new Label("ourcraft"));
-        title.setFontSize(36f);
-        panel.addChild(new Button("Start Game")).addClickCommands(src -> startGame());
-        panel.addChild(new Button("Exit")).addClickCommands(src -> simpleApp.stop());
+        panel.setBackground(UiTheme.card(UiTheme.PANEL, 44f, 32f));
 
+        panel.addChild(UiTheme.title("OURCRAFT"));
+        panel.addChild(UiTheme.heading("Endless Beach Siege", 20f, UiTheme.AQUA));
+        panel.addChild(spacer());
+
+        panel.addChild(UiTheme.primary("Start Game")).addClickCommands(src -> startGame());
+        panel.addChild(UiTheme.secondary("How to Play")).addClickCommands(src -> openHowToPlay());
+        panel.addChild(UiTheme.subtle("Exit")).addClickCommands(src -> simpleApp.stop());
+    }
+
+    private static Label spacer() {
+        Label s = new Label("");
+        s.setFontSize(10f);
+        return s;
+    }
+
+    private void layout() {
+        scrim.setLocalTranslation(0f, 0f, 0f);
         panel.setLocalTranslation(
-                (app.getCamera().getWidth() - panel.getPreferredSize().x) / 2f,
-                (app.getCamera().getHeight() + panel.getPreferredSize().y) / 2f,
-                0f);
+                (camera.getWidth() - panel.getPreferredSize().x) / 2f,
+                (camera.getHeight() + panel.getPreferredSize().y) / 2f,
+                2f);
     }
 
     @Override
@@ -66,6 +86,8 @@ public class MainMenuState extends BaseAppState {
         // Keep the OS cursor visible on the menu (WSLg hides it, and returning from gameplay can
         // leave it hidden) so the Start Game / Exit buttons stay clickable.
         inputManager.setCursorVisible(true);
+        layout();
+        guiNode.attachChild(scrim);
         guiNode.attachChild(panel);
         inputManager.addMapping(START, new KeyTrigger(KeyInput.KEY_RETURN));
         inputManager.addMapping(EXIT, new KeyTrigger(KeyInput.KEY_ESCAPE));
@@ -74,6 +96,7 @@ public class MainMenuState extends BaseAppState {
 
     @Override
     protected void onDisable() {
+        scrim.removeFromParent();
         panel.removeFromParent();
         inputManager.removeListener(shortcuts);
         for (String mapping : List.of(START, EXIT)) {
@@ -86,5 +109,10 @@ public class MainMenuState extends BaseAppState {
     private void startGame() {
         getStateManager().detach(this);
         getStateManager().attach(new GameplayState());
+    }
+
+    private void openHowToPlay() {
+        getStateManager().detach(this);
+        getStateManager().attach(new HowToPlayState());
     }
 }

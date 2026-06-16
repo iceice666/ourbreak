@@ -7,8 +7,9 @@ import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.renderer.Camera;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
-import com.simsilica.lemur.Button;
 import com.simsilica.lemur.Container;
 import com.simsilica.lemur.Label;
 
@@ -25,6 +26,8 @@ public class GameEndState extends BaseAppState {
     private SimpleApplication simpleApp;
     private InputManager inputManager;
     private Node guiNode;
+    private Camera camera;
+    private Geometry scrim;
     private Container panel;
 
     private final ActionListener shortcuts = (name, isPressed, tpf) -> {
@@ -45,17 +48,28 @@ public class GameEndState extends BaseAppState {
         this.simpleApp = (SimpleApplication) app;
         this.inputManager = app.getInputManager();
         this.guiNode = simpleApp.getGuiNode();
+        this.camera = app.getCamera();
+
+        scrim = UiTheme.scrim(app.getAssetManager(), camera.getWidth(), camera.getHeight());
 
         panel = new Container();
-        Label title = panel.addChild(new Label("GAME OVER"));
-        title.setFontSize(36f);
-        panel.addChild(new Label("Reached Round " + roundReached));
-        panel.addChild(new Button("Restart")).addClickCommands(src -> restart());
+        panel.setBackground(UiTheme.card(UiTheme.PANEL, 44f, 32f));
 
+        panel.addChild(UiTheme.heading("GAME OVER", 52f, UiTheme.CORAL));
+        panel.addChild(UiTheme.heading("Reached Round", 20f, UiTheme.TEXT_DIM));
+        panel.addChild(UiTheme.heading(String.valueOf(roundReached), 72f, UiTheme.GOLD)); // the score shines
+        Label spacer = panel.addChild(new Label(""));
+        spacer.setFontSize(10f);
+        panel.addChild(UiTheme.primary("Restart")).addClickCommands(src -> restart());
+        panel.addChild(UiTheme.heading("Enter / Esc", 14f, UiTheme.TEXT_DIM));
+    }
+
+    private void layout() {
+        scrim.setLocalTranslation(0f, 0f, 0f);
         panel.setLocalTranslation(
-                (app.getCamera().getWidth() - panel.getPreferredSize().x) / 2f,
-                (app.getCamera().getHeight() + panel.getPreferredSize().y) / 2f,
-                0f);
+                (camera.getWidth() - panel.getPreferredSize().x) / 2f,
+                (camera.getHeight() + panel.getPreferredSize().y) / 2f,
+                2f);
     }
 
     @Override
@@ -66,13 +80,16 @@ public class GameEndState extends BaseAppState {
     protected void onEnable() {
         // Restore the cursor (gameplay can leave it hidden under WSLg) so Restart is clickable.
         inputManager.setCursorVisible(true);
+        layout();
+        guiNode.attachChild(scrim);
         guiNode.attachChild(panel);
-        inputManager.addMapping(RESTART, new KeyTrigger(KeyInput.KEY_RETURN));
+        inputManager.addMapping(RESTART, new KeyTrigger(KeyInput.KEY_RETURN), new KeyTrigger(KeyInput.KEY_ESCAPE));
         inputManager.addListener(shortcuts, RESTART);
     }
 
     @Override
     protected void onDisable() {
+        scrim.removeFromParent();
         panel.removeFromParent();
         inputManager.removeListener(shortcuts);
         if (inputManager.hasMapping(RESTART)) {

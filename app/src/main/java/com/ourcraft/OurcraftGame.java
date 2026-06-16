@@ -18,6 +18,9 @@ public class OurcraftGame extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         flyCam.setEnabled(false);
+        // Hide jME's debug HUD (FPS + render stats) — it overlaps menus and isn't for players.
+        setDisplayStatView(false);
+        setDisplayFps(false);
         // WSLg hides the OS cursor as soon as it enters the window unless we explicitly keep it
         // visible; without this the Lemur menu buttons are unclickable (no pointer to click with).
         inputManager.setCursorVisible(true);

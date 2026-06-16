@@ -67,9 +67,12 @@ public class HudState extends BaseAppState {
         this.blocks = ed.getEntities(BlockComponent.class);
 
         roundLabel = label();
+        roundLabel.setColor(UiTheme.GOLD);
         countdownLabel = label();
         buildingsLabel = label();
+        buildingsLabel.setColor(UiTheme.AQUA);
         weaponLabel = label();
+        weaponLabel.setColor(UiTheme.GOLD);
         weaponLabel.setFontSize(WEAPON_FONT_SIZE); // weapon readout is enlarged vs the rest of the HUD
 
         weaponIcon = new Picture("weapon-icon");
@@ -85,9 +88,9 @@ public class HudState extends BaseAppState {
 
     @Override
     protected void onEnable() {
+        // countdown + buildings are attached on demand during ATTACK (see update) so they don't leave
+        // empty pills during BUILD.
         guiNode.attachChild(roundLabel);
-        guiNode.attachChild(countdownLabel);
-        guiNode.attachChild(buildingsLabel);
         guiNode.attachChild(weaponLabel);
         guiNode.attachChild(weaponIcon);
     }
@@ -115,7 +118,13 @@ public class HudState extends BaseAppState {
 
         boolean attacking = phase.phase() == Phase.ATTACK;
         if (attacking) {
+            if (countdownLabel.getParent() == null) {
+                guiNode.attachChild(countdownLabel);
+                guiNode.attachChild(buildingsLabel);
+            }
             countdownLabel.setText(HudText.countdown(round.remainingSeconds()));
+            // Urgency: the clock turns coral-red in the final 10 seconds.
+            countdownLabel.setColor(round.remainingSeconds() <= 10.0 ? UiTheme.CORAL : UiTheme.GOLD);
             countdownLabel.setLocalTranslation(
                     camera.getWidth() - MARGIN - countdownLabel.getPreferredSize().x, top, 0f);
 
@@ -123,9 +132,9 @@ public class HudState extends BaseAppState {
             buildingsLabel.setText(HudText.buildings(blocks.size()));
             buildingsLabel.setLocalTranslation(
                     (camera.getWidth() - buildingsLabel.getPreferredSize().x) / 2f, top, 0f);
-        } else {
-            countdownLabel.setText("");
-            buildingsLabel.setText("");
+        } else if (countdownLabel.getParent() != null) {
+            countdownLabel.removeFromParent();
+            buildingsLabel.removeFromParent();
         }
 
         WeaponComponent weapon = ed.getComponent(playerId, WeaponComponent.class);
@@ -159,8 +168,9 @@ public class HudState extends BaseAppState {
 
     private Label label() {
         Label label = new Label("");
-        label.setColor(ColorRGBA.White);
+        label.setColor(UiTheme.TEXT);
         label.setFontSize(FONT_SIZE);
+        label.setBackground(UiTheme.pill()); // dark backing so HUD text reads over the bright beach
         return label;
     }
 }
