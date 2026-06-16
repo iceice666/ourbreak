@@ -15,13 +15,12 @@ import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
-import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
-import com.jme3.input.controls.MouseAxisTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Ray;
+import com.jme3.math.Vector2f;
 import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -31,15 +30,21 @@ import com.ourcraft.ecs.components.WeaponComponent.WeaponType;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
  * First-person input for an active match. WASD movement is delegated to the fly-cam, but mouse-look
- * is handled here so the cursor stays visible — jME's FlyByCamera hides/grabs the cursor to look,
- * which WSLg/XWayland does not deliver relative motion for. Instead: hold the RIGHT mouse button and
- * move to look around (cursor stays visible), left-click to attack, 1/2/3 to switch weapon.
+ * is handled here. jME's FlyByCamera (and GLFW's {@code CURSOR_DISABLED}) drive FPS look by warping
+ * the cursor back to centre each frame, which WSLg/XWayland blocks (Wayland forbids apps moving the
+ * cursor) — so the standard captured-cursor look never rotates. Instead we keep the cursor visible
+ * and rotate from its per-frame position delta (free look, no button), with edge-steer so you can
+ * keep turning when the cursor pins against a window edge (where there is no delta to read).
+ * Left-click to attack, 1/2/3 or Q to switch weapon.
  */
 public class PlayerControlState extends BaseAppState {
 
@@ -48,18 +53,17 @@ public class PlayerControlState extends BaseAppState {
     private static final String SELECT_DRONE = "ourcraft.selectDrone";
     private static final String CYCLE_WEAPON = "ourcraft.cycleWeapon";
     private static final String ATTACK = "ourcraft.attack";
-    private static final String LOOK_DRAG = "ourcraft.lookDrag";
-    private static final String LOOK_X_NEG = "ourcraft.lookXNeg";
-    private static final String LOOK_X_POS = "ourcraft.lookXPos";
-    private static final String LOOK_Y_NEG = "ourcraft.lookYNeg";
-    private static final String LOOK_Y_POS = "ourcraft.lookYPos";
 
     /** Fly-cam movement units per second at full (un-slowed) speed. */
     private static final float BASE_MOVE_SPEED = 8f;
-    /** Mouse-look sensitivity (radians per unit of mouse-axis motion). */
-    private static final float LOOK_SENSITIVITY = 3f;
+    /** Mouse-look sensitivity (radians per pixel of cursor movement). */
+    private static final float LOOK_SENSITIVITY = 0.004f;
     /** Pitch clamp so the view cannot flip over the poles. */
     private static final float PITCH_LIMIT = 1.5f;
+    /** Distance (px) from a window edge at which edge-steer kicks in. */
+    private static final float EDGE_MARGIN = 6f;
+    /** Continuous yaw rate (rad/s) while the cursor is pinned at a left/right edge. */
+    private static final float EDGE_TURN_SPEED = 1.8f;
 
     private final EntityData ed;
     private final EntityId playerId;
@@ -76,12 +80,19 @@ public class PlayerControlState extends BaseAppState {
     private AudioNode droneBoom;
     private AudioNode swordSlash;
 
-    private boolean looking;
     private float yaw;
     private float pitch;
+    private float lastCursorX;
+    private float lastCursorY;
+    private boolean lookPrimed;
+
+    /**
+     * True when the platform allows captured-cursor FPS look (real Windows / desktop Linux). False
+     * under WSLg, where the cursor can't be warped, so we fall back to the visible-cursor delta look.
+     */
+    private final boolean nativeLook = !runningUnderWsl();
 
     private final ActionListener actionListener = this::onAction;
-    private final AnalogListener lookListener = this::onLook;
 
     public PlayerControlState(
             EntityData ed,
@@ -134,33 +145,33 @@ public class PlayerControlState extends BaseAppState {
 
     @Override
     protected void onEnable() {
-        // Keep the fly-cam for WASD movement only; dragToRotate(true) stops it from hiding the cursor.
         flyCam.setEnabled(true);
-        flyCam.setDragToRotate(true);
         flyCam.setMoveSpeed(BASE_MOVE_SPEED);
-        inputManager.setCursorVisible(true);
 
-        // Strip the fly-cam's own look controls so it never grabs the cursor; we do mouse-look here.
-        for (String mapping : List.of(CameraInput.FLYCAM_LEFT, CameraInput.FLYCAM_RIGHT,
-                CameraInput.FLYCAM_UP, CameraInput.FLYCAM_DOWN, CameraInput.FLYCAM_ROTATEDRAG)) {
-            if (inputManager.hasMapping(mapping)) {
-                inputManager.deleteMapping(mapping);
+        if (nativeLook) {
+            // Real desktop: let the fly-cam do captured-cursor FPS look (cursor hidden + warped).
+            flyCam.setDragToRotate(false);
+            flyCam.setRotationSpeed(1.5f);
+            inputManager.setCursorVisible(false);
+        } else {
+            // WSLg: keep the cursor visible and do our own delta look; strip the fly-cam's look
+            // controls so it never tries to grab/warp the cursor (which WSLg ignores anyway).
+            flyCam.setDragToRotate(true);
+            inputManager.setCursorVisible(true);
+            for (String mapping : List.of(CameraInput.FLYCAM_LEFT, CameraInput.FLYCAM_RIGHT,
+                    CameraInput.FLYCAM_UP, CameraInput.FLYCAM_DOWN, CameraInput.FLYCAM_ROTATEDRAG)) {
+                if (inputManager.hasMapping(mapping)) {
+                    inputManager.deleteMapping(mapping);
+                }
             }
+            // Start looking roughly toward the play area (facing -Z, tilted slightly down).
+            yaw = 0f;
+            pitch = -0.1f;
+            applyLook();
+            lookPrimed = false; // first update() seeds the cursor baseline without jumping the view
         }
 
-        // Start looking roughly toward the play area (facing -Z, tilted slightly down).
-        yaw = 0f;
-        pitch = -0.1f;
-        applyLook();
-
         guiNode.attachChild(crosshair);
-
-        inputManager.addMapping(LOOK_DRAG, new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
-        inputManager.addMapping(LOOK_X_NEG, new MouseAxisTrigger(MouseInput.AXIS_X, true));
-        inputManager.addMapping(LOOK_X_POS, new MouseAxisTrigger(MouseInput.AXIS_X, false));
-        inputManager.addMapping(LOOK_Y_NEG, new MouseAxisTrigger(MouseInput.AXIS_Y, true));
-        inputManager.addMapping(LOOK_Y_POS, new MouseAxisTrigger(MouseInput.AXIS_Y, false));
-        inputManager.addListener(lookListener, LOOK_X_NEG, LOOK_X_POS, LOOK_Y_NEG, LOOK_Y_POS);
 
         inputManager.addMapping(SELECT_SWORD, new KeyTrigger(KeyInput.KEY_1));
         inputManager.addMapping(SELECT_GUN, new KeyTrigger(KeyInput.KEY_2));
@@ -168,20 +179,18 @@ public class PlayerControlState extends BaseAppState {
         inputManager.addMapping(CYCLE_WEAPON, new KeyTrigger(KeyInput.KEY_Q));
         inputManager.addMapping(ATTACK, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
         inputManager.addListener(actionListener,
-                LOOK_DRAG, SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK);
+                SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK);
     }
 
     @Override
     protected void onDisable() {
         inputManager.removeListener(actionListener);
-        inputManager.removeListener(lookListener);
-        for (String mapping : List.of(LOOK_DRAG, LOOK_X_NEG, LOOK_X_POS, LOOK_Y_NEG, LOOK_Y_POS,
-                SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK)) {
+        for (String mapping : List.of(SELECT_SWORD, SELECT_GUN, SELECT_DRONE, CYCLE_WEAPON, ATTACK)) {
             if (inputManager.hasMapping(mapping)) {
                 inputManager.deleteMapping(mapping);
             }
         }
-        looking = false;
+        lookPrimed = false;
         crosshair.removeFromParent();
         flyCam.setEnabled(false);
         inputManager.setCursorVisible(true);
@@ -192,13 +201,61 @@ public class PlayerControlState extends BaseAppState {
         // Coral proximity slows movement; full speed when no Coral block is in range.
         float factor = blockEffect.coralSlowFactor(PositionComponent.of(camera.getLocation()));
         flyCam.setMoveSpeed(BASE_MOVE_SPEED * factor);
+
+        if (!nativeLook) {
+            updateLook(tpf); // native look is driven by the fly-cam itself
+        }
+    }
+
+    /** WSLg/WSL2 can't warp the cursor, so captured-cursor FPS look is impossible there. */
+    private static boolean runningUnderWsl() {
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        if (os.contains("win")) {
+            return false; // native Windows
+        }
+        if (System.getenv("WSL_DISTRO_NAME") != null || System.getenv("WSL_INTEROP") != null) {
+            return true;
+        }
+        try {
+            String version = Files.readString(Path.of("/proc/version")).toLowerCase(Locale.ROOT);
+            return version.contains("microsoft") || version.contains("wsl");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Free mouse-look from the visible cursor's per-frame movement (WSLg can't warp the cursor for
+     * captured look). Moving the mouse rotates the view; pinning it against a left/right edge keeps
+     * turning at a steady rate so you can still spin past where the cursor runs out of room.
+     */
+    private void updateLook(float tpf) {
+        Vector2f cursor = inputManager.getCursorPosition();
+        float x = cursor.x;
+        float y = cursor.y; // jME cursor Y is bottom-up
+
+        if (lookPrimed) {
+            float dx = x - lastCursorX;
+            float dy = y - lastCursorY;
+            yaw += dx * LOOK_SENSITIVITY;   // mouse right → turn right
+            pitch += dy * LOOK_SENSITIVITY; // mouse up → look up
+        }
+        lastCursorX = x;
+        lastCursorY = y;
+        lookPrimed = true;
+
+        // Edge-steer: no cursor delta is available once it's pinned at an edge, so turn at a fixed rate.
+        if (x <= EDGE_MARGIN) {
+            yaw -= EDGE_TURN_SPEED * tpf;
+        } else if (x >= camera.getWidth() - EDGE_MARGIN) {
+            yaw += EDGE_TURN_SPEED * tpf;
+        }
+
+        pitch = FastMath.clamp(pitch, -PITCH_LIMIT, PITCH_LIMIT);
+        applyLook();
     }
 
     private void onAction(String name, boolean isPressed, float tpf) {
-        if (LOOK_DRAG.equals(name)) {
-            looking = isPressed;
-            return;
-        }
         if (!isPressed) {
             return;
         }
@@ -217,21 +274,6 @@ public class PlayerControlState extends BaseAppState {
         WeaponType[] types = WeaponType.values();
         int current = weapon != null ? weapon.weaponType().ordinal() : -1;
         selectWeapon(types[(current + 1) % types.length]);
-    }
-
-    private void onLook(String name, float value, float tpf) {
-        if (!looking) {
-            return;
-        }
-        switch (name) {
-            case LOOK_X_NEG -> yaw -= value * LOOK_SENSITIVITY;
-            case LOOK_X_POS -> yaw += value * LOOK_SENSITIVITY;
-            case LOOK_Y_NEG -> pitch -= value * LOOK_SENSITIVITY;
-            case LOOK_Y_POS -> pitch += value * LOOK_SENSITIVITY;
-            default -> { /* ignore */ }
-        }
-        pitch = FastMath.clamp(pitch, -PITCH_LIMIT, PITCH_LIMIT);
-        applyLook();
     }
 
     private void applyLook() {

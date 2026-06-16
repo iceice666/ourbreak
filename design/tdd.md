@@ -69,9 +69,11 @@ MainMenuState
 | 操作 | 輸入 |
 |------|------|
 | 移動 | WASD |
-| 視角 | 滑鼠**右鍵拖曳**（dragToRotate，游標保持可見；為了相容 WSLg 不抓取游標）|
+| 視角 | 滑鼠直接轉視角（免按鍵）。平台自動切換：原生 Windows/桌面 Linux 用 jME 捕獲式 FPS 視角；WSLg 因不能 warp 游標，改用「游標可見 + 每幀位移差值 + 邊緣繼續轉」workaround |
 | 攻擊 | 左鍵 |
 | 武器切換 | 1 / 2 / 3 鍵，或 Q 循環切換 |
+
+> WSLg/XWayland 封鎖 `glfwSetCursorPos`/cursor warp，標準 `CURSOR_DISABLED` 捕獲式視角在 WSL 下整個失效（GLFW issue #2271）。`PlayerControlState.runningUnderWsl()` 用 `os.name` + `WSL_DISTRO_NAME`/`WSL_INTEROP`/`/proc/version` 偵測,只在 WSL 走 workaround。
 
 `PlayerControlState` 透過 JME `InputManager` 綁定，讀取輸入後更新 `PositionComponent` 或觸發 `WeaponSystem`。
 
