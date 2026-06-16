@@ -70,6 +70,8 @@ public class PlayerControlState extends BaseAppState {
     private static final float EDGE_MARGIN = 6f;
     /** Continuous yaw rate (rad/s) while the cursor is pinned at a left/right edge. */
     private static final float EDGE_TURN_SPEED = 1.8f;
+    /** Where the NPC builds the wall (the mascot at the origin) — the player faces this at spawn. */
+    private static final Vector3f WALL_CENTRE = new Vector3f(0f, 0f, 0f);
 
     private final EntityData ed;
     private final EntityId playerId;
@@ -167,6 +169,10 @@ public class PlayerControlState extends BaseAppState {
             }
         }
 
+        // Face the wall centre (the mascot at the origin) at spawn, so the blocks are in front of the
+        // player instead of behind them.
+        camera.lookAt(WALL_CENTRE, Vector3f.UNIT_Y);
+
         if (nativeLook) {
             // Real desktop: let the fly-cam do captured-cursor FPS look (cursor hidden + warped).
             flyCam.setEnabled(true);
@@ -184,10 +190,10 @@ public class PlayerControlState extends BaseAppState {
                     inputManager.deleteMapping(mapping);
                 }
             }
-            // Start looking roughly toward the play area (facing -Z, tilted slightly down).
-            yaw = 0f;
-            pitch = -0.1f;
-            applyLook();
+            // Seed yaw/pitch from the look-at orientation so our delta-look continues from facing the wall.
+            float[] angles = camera.getRotation().toAngles(null);
+            pitch = angles[0];
+            yaw = angles[1];
             lookPrimed = false; // first update() seeds the cursor baseline without jumping the view
         }
 
