@@ -5,12 +5,20 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.collision.CollisionResult;
 import com.jme3.collision.CollisionResults;
+import com.jme3.font.BitmapFont;
+import com.jme3.font.BitmapText;
+import com.jme3.input.CameraInput;
+import com.jme3.input.FlyByCamera;
 import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.input.controls.MouseAxisTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
+import com.jme3.math.FastMath;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Ray;
 import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
@@ -26,9 +34,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * First-person input for an active match: WASD movement and mouse-look (delegated to the fly-cam),
- * weapon switching on 1/2/3, and a left-click attack that ray-picks the block under the crosshair
- * and feeds it to {@link WeaponSystem}. Holds no rendering state of its own.
+ * First-person input for an active match. WASD movement is delegated to the fly-cam, but mouse-look
+ * is handled here so the cursor stays visible — jME's FlyByCamera hides/grabs the cursor to look,
+ * which WSLg/XWayland does not deliver relative motion for. Instead: hold the RIGHT mouse button and
+ * move to look around (cursor stays visible), left-click to attack, 1/2/3 to switch weapon.
  */
 public class PlayerControlState extends BaseAppState {
 
@@ -36,9 +45,18 @@ public class PlayerControlState extends BaseAppState {
     private static final String SELECT_GUN = "ourcraft.selectGun";
     private static final String SELECT_DRONE = "ourcraft.selectDrone";
     private static final String ATTACK = "ourcraft.attack";
+    private static final String LOOK_DRAG = "ourcraft.lookDrag";
+    private static final String LOOK_X_NEG = "ourcraft.lookXNeg";
+    private static final String LOOK_X_POS = "ourcraft.lookXPos";
+    private static final String LOOK_Y_NEG = "ourcraft.lookYNeg";
+    private static final String LOOK_Y_POS = "ourcraft.lookYPos";
 
     /** Fly-cam movement units per second at full (un-slowed) speed. */
     private static final float BASE_MOVE_SPEED = 8f;
+    /** Mouse-look sensitivity (radians per unit of mouse-axis motion). */
+    private static final float LOOK_SENSITIVITY = 3f;
+    /** Pitch clamp so the view cannot flip over the poles. */
+    private static final float PITCH_LIMIT = 1.5f;
 
     private final EntityData ed;
     private final EntityId playerId;
@@ -48,9 +66,17 @@ public class PlayerControlState extends BaseAppState {
     private InputManager inputManager;
     private Camera camera;
     private Node rootNode;
+    private Node guiNode;
     private SimpleApplication simpleApp;
+    private FlyByCamera flyCam;
+    private BitmapText crosshair;
 
-    private final ActionListener listener = this::onAction;
+    private boolean looking;
+    private float yaw;
+    private float pitch;
+
+    private final ActionListener actionListener = this::onAction;
+    private final AnalogListener lookListener = this::onLook;
 
     public PlayerControlState(
             EntityData ed,
@@ -69,6 +95,16 @@ public class PlayerControlState extends BaseAppState {
         this.inputManager = app.getInputManager();
         this.camera = app.getCamera();
         this.rootNode = simpleApp.getRootNode();
+        this.guiNode = simpleApp.getGuiNode();
+        this.flyCam = simpleApp.getFlyByCamera();
+
+        BitmapFont font = app.getAssetManager().loadFont("Interface/Fonts/Default.fnt");
+        crosshair = new BitmapText(font);
+        crosshair.setText("+");
+        crosshair.setLocalTranslation(
+                camera.getWidth() / 2f - crosshair.getLineWidth() / 2f,
+                camera.getHeight() / 2f + crosshair.getLineHeight() / 2f,
+                0f);
     }
 
     @Override
@@ -77,28 +113,54 @@ public class PlayerControlState extends BaseAppState {
 
     @Override
     protected void onEnable() {
-        // Fly-cam already provides WASD movement and mouse-look; capture the cursor for first-person.
-        simpleApp.getFlyByCamera().setEnabled(true);
-        simpleApp.getFlyByCamera().setMoveSpeed(BASE_MOVE_SPEED);
-        inputManager.setCursorVisible(false);
+        // Keep the fly-cam for WASD movement only; dragToRotate(true) stops it from hiding the cursor.
+        flyCam.setEnabled(true);
+        flyCam.setDragToRotate(true);
+        flyCam.setMoveSpeed(BASE_MOVE_SPEED);
+        inputManager.setCursorVisible(true);
+
+        // Strip the fly-cam's own look controls so it never grabs the cursor; we do mouse-look here.
+        for (String mapping : List.of(CameraInput.FLYCAM_LEFT, CameraInput.FLYCAM_RIGHT,
+                CameraInput.FLYCAM_UP, CameraInput.FLYCAM_DOWN, CameraInput.FLYCAM_ROTATEDRAG)) {
+            if (inputManager.hasMapping(mapping)) {
+                inputManager.deleteMapping(mapping);
+            }
+        }
+
+        // Start looking roughly toward the play area (facing -Z, tilted slightly down).
+        yaw = 0f;
+        pitch = -0.1f;
+        applyLook();
+
+        guiNode.attachChild(crosshair);
+
+        inputManager.addMapping(LOOK_DRAG, new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
+        inputManager.addMapping(LOOK_X_NEG, new MouseAxisTrigger(MouseInput.AXIS_X, true));
+        inputManager.addMapping(LOOK_X_POS, new MouseAxisTrigger(MouseInput.AXIS_X, false));
+        inputManager.addMapping(LOOK_Y_NEG, new MouseAxisTrigger(MouseInput.AXIS_Y, true));
+        inputManager.addMapping(LOOK_Y_POS, new MouseAxisTrigger(MouseInput.AXIS_Y, false));
+        inputManager.addListener(lookListener, LOOK_X_NEG, LOOK_X_POS, LOOK_Y_NEG, LOOK_Y_POS);
 
         inputManager.addMapping(SELECT_SWORD, new KeyTrigger(KeyInput.KEY_1));
         inputManager.addMapping(SELECT_GUN, new KeyTrigger(KeyInput.KEY_2));
         inputManager.addMapping(SELECT_DRONE, new KeyTrigger(KeyInput.KEY_3));
         inputManager.addMapping(ATTACK, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
-        inputManager.addListener(listener, SELECT_SWORD, SELECT_GUN, SELECT_DRONE, ATTACK);
+        inputManager.addListener(actionListener, LOOK_DRAG, SELECT_SWORD, SELECT_GUN, SELECT_DRONE, ATTACK);
     }
 
     @Override
     protected void onDisable() {
-        inputManager.removeListener(listener);
-        for (String mapping : List.of(SELECT_SWORD, SELECT_GUN, SELECT_DRONE, ATTACK)) {
+        inputManager.removeListener(actionListener);
+        inputManager.removeListener(lookListener);
+        for (String mapping : List.of(LOOK_DRAG, LOOK_X_NEG, LOOK_X_POS, LOOK_Y_NEG, LOOK_Y_POS,
+                SELECT_SWORD, SELECT_GUN, SELECT_DRONE, ATTACK)) {
             if (inputManager.hasMapping(mapping)) {
                 inputManager.deleteMapping(mapping);
             }
         }
-        // Release the cursor so menu and end screens are usable.
-        simpleApp.getFlyByCamera().setEnabled(false);
+        looking = false;
+        crosshair.removeFromParent();
+        flyCam.setEnabled(false);
         inputManager.setCursorVisible(true);
     }
 
@@ -106,10 +168,14 @@ public class PlayerControlState extends BaseAppState {
     public void update(float tpf) {
         // Coral proximity slows movement; full speed when no Coral block is in range.
         float factor = blockEffect.coralSlowFactor(PositionComponent.of(camera.getLocation()));
-        simpleApp.getFlyByCamera().setMoveSpeed(BASE_MOVE_SPEED * factor);
+        flyCam.setMoveSpeed(BASE_MOVE_SPEED * factor);
     }
 
     private void onAction(String name, boolean isPressed, float tpf) {
+        if (LOOK_DRAG.equals(name)) {
+            looking = isPressed;
+            return;
+        }
         if (!isPressed) {
             return;
         }
@@ -120,6 +186,25 @@ public class PlayerControlState extends BaseAppState {
             case ATTACK -> attack();
             default -> { /* ignore */ }
         }
+    }
+
+    private void onLook(String name, float value, float tpf) {
+        if (!looking) {
+            return;
+        }
+        switch (name) {
+            case LOOK_X_NEG -> yaw -= value * LOOK_SENSITIVITY;
+            case LOOK_X_POS -> yaw += value * LOOK_SENSITIVITY;
+            case LOOK_Y_NEG -> pitch -= value * LOOK_SENSITIVITY;
+            case LOOK_Y_POS -> pitch += value * LOOK_SENSITIVITY;
+            default -> { /* ignore */ }
+        }
+        pitch = FastMath.clamp(pitch, -PITCH_LIMIT, PITCH_LIMIT);
+        applyLook();
+    }
+
+    private void applyLook() {
+        camera.setRotation(new Quaternion().fromAngles(pitch, yaw, 0f));
     }
 
     private void selectWeapon(WeaponType type) {
