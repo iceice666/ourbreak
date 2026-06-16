@@ -38,8 +38,10 @@ to a small OGG.
 
 ## Open questions / blockers
 
-- [ ] Decide how to ship the music asset: commit the WAV, or convert to OGG and
-  commit that (needs an audio converter / ffmpeg).
+- [x] Decide how to ship the music asset: commit the WAV, or convert to OGG and
+  commit that (needs an audio converter / ffmpeg). → Resolved: commit the 28 MB
+  WAV directly (well under GitHub's limits; committing game assets is normal).
+  OGG conversion remains an optional future size optimisation.
 
 ---
 

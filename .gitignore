@@ -35,6 +35,3 @@ build
 
 # Ignore Kotlin plugin data
 .kotlin
-
-# Large raw audio assets — keep local; ship a converted OGG instead (see AudioState)
-app/src/main/resources/Sound/*.wav
