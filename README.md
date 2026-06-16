@@ -29,6 +29,47 @@ Built with **Java 21 + jMonkeyEngine 3.9 + Zay-ES (ECS) + Lemur (UI)**. MIT lice
 
 See the in-game **How to Play** screen for the full reference.
 
+## How it works
+
+Screens are jME `AppState`s; the game itself is a Zay-ES ECS (the systems read and write a
+shared `EntityData`).
+
+```mermaid
+flowchart LR
+    Menu[Main Menu] -->|Start Game| Game[Gameplay]
+    Menu -->|How to Play| Howto[How to Play]
+    Howto -->|Back / Esc| Menu
+    Game -->|result decided| End[Game Over]
+    End -->|Restart| Menu
+```
+
+Each round is a BUILD → ATTACK loop; surviving advances to a harder round, a timeout loses:
+
+```mermaid
+stateDiagram-v2
+    [*] --> BUILD
+    BUILD --> ATTACK: NPC finishes the wall
+    ATTACK --> BUILD: wall cleared, advanceRound() (harder)
+    ATTACK --> GameOver: timer hits 0 with blocks left
+    GameOver --> [*]: score = round reached
+```
+
+Systems read/write the shared ECS each frame:
+
+```mermaid
+flowchart TD
+    PC[PlayerControlState<br/>move - look - attack] -->|attack| WS[WeaponSystem]
+    WS -->|damage / shell split| ED[(EntityData - ECS)]
+    NB[NpcBuilderSystem] -->|place blocks| ED
+    CG[CoralGrowthSystem] -->|coral regrowth| ED
+    RS[RoundSystem] -->|round - phase - timer| ED
+    VS[VictorySystem] -->|win / lose| ED
+    ED --> MV[ModelViewState<br/>render blocks]
+    ED --> HUD[HudState]
+    ED --> PZ[PoisonState<br/>jellyfish poison]
+    ED --> MC[MascotState<br/>crab + flee]
+```
+
 ## Build & run
 
 The toolchain is pinned with Nix flakes; enter the dev shell first:
