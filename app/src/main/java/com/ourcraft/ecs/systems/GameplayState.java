@@ -67,7 +67,7 @@ public class GameplayState extends BaseAppState {
         EntityId playerId = ed.createEntity();
         ed.setComponents(playerId,
                 new WeaponComponent(WeaponType.SWORD),
-                new PositionComponent(0f, 0f, 8f));
+                new PositionComponent(0f, 0f, 13f));
 
         victorySystem = new VictorySystem(ed, gameStateId, roundSystem);
         npcBuilder = new NpcBuilderSystem(ed, roundSystem, mascotId);
@@ -86,7 +86,7 @@ public class GameplayState extends BaseAppState {
         poison = new PoisonState(ed, playerId);
         getStateManager().attach(poison);
 
-        app.getCamera().setLocation(new Vector3f(0f, 1.5f, 8f));
+        app.getCamera().setLocation(new Vector3f(0f, 1.5f, 13f));
         app.getCamera().lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
     }
 
