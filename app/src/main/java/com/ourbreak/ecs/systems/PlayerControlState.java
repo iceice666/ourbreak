@@ -327,8 +327,16 @@ public class PlayerControlState extends BaseAppState {
             case SELECT_GUN -> selectWeapon(WeaponType.GUN);
             case SELECT_DRONE -> selectWeapon(WeaponType.DRONE);
             case CYCLE_WEAPON -> cycleWeapon();
-            case ATTACK -> attack();
+            case ATTACK -> { swingHeldWeapon(); attack(); }
             default -> { /* ignore */ }
+        }
+    }
+
+    /** Swing the held-weapon viewmodel on every click (like Minecraft, even on a miss). */
+    private void swingHeldWeapon() {
+        HeldWeaponState held = getStateManager().getState(HeldWeaponState.class);
+        if (held != null) {
+            held.swing();
         }
     }
 
