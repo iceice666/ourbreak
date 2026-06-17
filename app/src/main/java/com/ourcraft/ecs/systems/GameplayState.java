@@ -36,6 +36,7 @@ public class GameplayState extends BaseAppState {
     private CoralGrowthSystem coralGrowth;
     private PlayerControlState playerControl;
     private HudState hud;
+    private RoundBannerState roundBanner;
 
     private EntityId gameStateId;
     private boolean resolved;
@@ -83,6 +84,9 @@ public class GameplayState extends BaseAppState {
         hud = new HudState(ed, gameStateId, playerId);
         getStateManager().attach(hud);
 
+        roundBanner = new RoundBannerState(ed, gameStateId);
+        getStateManager().attach(roundBanner);
+
         poison = new PoisonState(ed, playerId);
         getStateManager().attach(poison);
 
@@ -92,6 +96,7 @@ public class GameplayState extends BaseAppState {
 
     @Override
     protected void cleanup(Application app) {
+        getStateManager().detach(roundBanner);
         getStateManager().detach(hud);
         getStateManager().detach(playerControl);
         getStateManager().detach(poison);
