@@ -21,7 +21,7 @@
 用 JME 的 `AppState` 管理畫面切換，切換時 attach/detach：
 
 ```
-MainMenuState
+MainMenuState  ⇄  HowToPlayState
   └─→ GameplayState
         └─→ GameEndState
               └─→ MainMenuState（重玩）
@@ -57,10 +57,18 @@ MainMenuState
 | `BlockEffectSystem` | Coral 減速、Drone 3×3、Sword 3-cell 橫排目標 |
 | `CoralGrowthSystem` | 攻擊階段每 7 秒讓每個活珊瑚在相鄰空洞長回新珊瑚（限攻擊起始的牆 footprint 內）|
 | `PoisonState` | 無人機炸死 Jellyfish → 中毒計時（+5s/上限 10s）、中毒時真方塊彩虹化、中毒條 UI |
-| `NpcBuilderSystem` | BUILD phase：腳本放方塊保護吉祥物 |
+| `NpcBuilderSystem` | BUILD phase：用 `VillageGenerator` 算出方塊，每幀放一塊保護吉祥物 |
+| `VillageGenerator` | 純函式、種子化、受預算上限：在原點周圍網格生成螃蟹村莊（主題屋／混合屋、人字屋頂、中空 3×3） |
 | `RoundSystem` | BUILD/ATTACK 切換、1 分鐘計時器、`advanceRound()`（計時器不自動進回合）|
 | `VictorySystem` | 生存：攻擊階段方塊清空 → 進下一回合；計時器歸零仍有方塊 → Game Over（任一回合）|
-| `HudState` | 更新 HUD 顯示（回合 / 倒數 / 剩餘建築 / 武器）|
+| `HudState` | 更新 HUD 顯示（回合 / 倒數 / 剩餘建築 / 武器，無人機顯示 `Lv.N`）|
+| `RoundBannerState` | 過關時顯示 `ROUND N CLEARED` 橫幅 2.5 秒 |
+| `DestructionFxState` | 方塊破壞 → 帶原貼圖的碎片 + 揚塵；無人機 → 3D 火球爆炸 + 衝擊波環 + 煙（FX 不投影） |
+| `HeldWeaponState` | 第一人稱手持武器 viewmodel（劍/槍/無人機 3D 模型，獨立 depth-only viewport、走路晃動 + 攻擊動畫）|
+| `MascotState` | 吉祥物螃蟹（基本幾何拼成）：閒置擺動、被看見時逃跑 |
+| `HitFeedbackState` | 命中回饋 |
+| `EnvironmentState` | 沙灘地板等環境 |
+| `AudioState` / `OurbreakGame` | 音效；主程式建立可見太陽 + 天空盒 + god rays + 方向光陰影 + bloom + 暗角 |
 
 ---
 
@@ -102,9 +110,11 @@ MainMenuState
 
 | 武器 | 攻擊方式 | 實作 |
 |------|----------|------|
-| SWORD | 近戰橫掃 | 準星 raycast 取中心方塊，再經 `BlockEffectSystem.rowTargets` 沿視角橫向 ±1 格展成 3 格，每格各算一次命中 |
-| GUN | 遠距單體 | 長距 raycast（20 格），命中第一個方塊 |
-| DRONE | 範圍轟炸 | 對準星方塊為中心，立即對 `(2·Lv+1)²` 方陣造成傷害（`droneAreaTargets(center, radius)`）。**等級隨難度升級**：`WeaponSystem.droneLevelForRound(round) = 1+(round−1)/3`（每 3 回合 +1、無上限）→ 3×3→5×5→7×7…，爆炸特效與 HUD `Lv.N` 同步。無獨立俯視操控模式 |
+| SWORD | 近戰橫掃 | 準星 raycast 取中心方塊，**近戰射程 `SWORD_REACH=4.5` 格**（命中點超出射程不算命中），再經 `BlockEffectSystem.rowTargets` 沿視角橫向 ±1 格展成 3 格，每格各算一次命中 |
+| GUN | 遠距單體 | raycast（`RANGED_REACH`，準星可及全場），命中第一個方塊 |
+| DRONE | 範圍轟炸 | 遠距（`RANGED_REACH`）；以準星方塊為中心,立即對 **3D 球體**(歐氏距離 ≤ radius,`dx²+dy²+dz²≤r²`)內的方塊造成傷害(`droneAreaTargets(center, radius)`)→ 會炸穿房子的高度。**等級隨難度升級**:`WeaponSystem.droneLevelForRound(round) = 1+(round−1)/3`(每 3 回合 +1、無上限),整數球格數 Lv1=7、Lv2=33…,爆炸特效與 HUD `Lv.N` 同步。無獨立俯視操控模式 |
+
+> **武器射程**（`PlayerControlState`）：準星 pick 帶 `maxReach`——劍 `SWORD_REACH=4.5`（近戰，要走近）、槍/無人機 `RANGED_REACH`（遠距）。揮空仍透過 `HeldWeaponState.swing()` 播放手持武器揮砍動畫。
 
 ### 武器剋制關係（影響 `WeaponSystem` 傷害倍數）
 
@@ -126,13 +136,13 @@ MainMenuState
 
 ---
 
-## 7. NPC AI（建造者腳本）
+## 7. NPC AI（建造者：程序化村莊）
 
-NPC 為純固定腳本，不使用 pathfinding。
+NPC 不使用 pathfinding。`NpcBuilderSystem` 在 BUILD phase 呼叫純函式 `VillageGenerator.generate(budget, palette, seed)`（`seed = base ^ round`，每回合不同但可重現）算出整座**螃蟹村莊**，再每幀放一塊直到放完 → 觸發 BUILD→ATTACK。
 
-**建造優先順序：** 吉祥物正前方 → 左右兩側 → 外圈
+**村莊生成（`VillageGenerator`）：** 在吉祥物（原點）周圍以間隔網格擺放一棟棟房子（最小 3×3 中空足跡、人字屋頂、2 格門口、少數塔樓）。每棟可能是以單一建材為主的**主題屋**（沙屋／貝殼屋…）或較難處理的**混合屋**（`MIXED_CHANCE`）。受 `budget`（每回合方塊數）上限，用完即止。
 
-**各 round 放置方塊策略：**
+**各 round 方塊調色盤（`palette`）：**
 
 | Round | 方塊組合 |
 |-------|----------|
@@ -178,15 +188,18 @@ NPC 為純固定腳本，不使用 pathfinding。
 | 左上 | 回合數（Round X，無上限）|
 | 右上 | 剩餘時間倒數（ATTACK phase 顯示）|
 | 中上 | 剩餘建築數量（ATTACK phase 顯示）|
-| 左下 | 當前武器名稱 |
+| 左下 | 當前武器名稱（無人機顯示 `Lv.N`）|
+| 右下 | 手持武器 3D viewmodel（`HeldWeaponState`）|
 | 下方中央 | 中毒條（`PoisonState`，僅中毒時顯示）|
+| 螢幕中央（短暫）| 過關橫幅 `ROUND N CLEARED`（`RoundBannerState`，2.5 秒）|
 
 ### 其他畫面
 
 | 畫面 | 元素 |
 |------|------|
-| MainMenuState | Start Game、Exit（玩家固定為 Openclaw）|
-| GameEndState | `GAME OVER` + `Reached Round N`、Restart（無 Win 終局）|
+| MainMenuState | Start Game、How to Play、Exit；顯示 `Best: Round N`（玩家固定為 Openclaw）|
+| HowToPlayState | 操作與方塊/武器剋制速查 |
+| GameEndState | `GAME OVER` + `Reached Round N`、`Best: Round N`，破紀錄跳動金字 `★ NEW BEST ★`、Restart（無 Win 終局）|
 
 ---
 
@@ -202,6 +215,7 @@ NPC 為純固定腳本，不使用 pathfinding。
 | `CoralGrowthTest` | `growthTargets` 純函式：補相鄰空洞、被包住不長、不長出 footprint 外、兩珊瑚不搶同格 |
 | `RoundSystemTest` | BUILD→ATTACK 切換、計時器倒數、time clamp 到 0 |
 | `VictorySystemTest` | 方塊清空 → 進下一回合（存活）、計時器歸零仍有方塊 → Game Over（任一回合）|
-| `NpcBuilderTest` | 各 round 放置正確方塊種類 |
+| `NpcBuilderTest` | 各 round 放置正確方塊種類（含村莊生成生命週期）|
+| `VillageGeneratorTest` | 純函式村莊生成：種子可重現、受預算上限、房子結構（中空 / 屋頂 / 門口）|
 | `DifficultyCurveTest` | 無限難度曲線：教學斜坡 + R5 接續 48、方塊永遠遞增、增量不暴衝、要求速率 < 漸近上限 |
 | `DroneLevelTest` | 無人機等級每 3 回合 +1、無上限、單調遞增；`droneAreaTargets` 半徑展開（5×5/3×3）|

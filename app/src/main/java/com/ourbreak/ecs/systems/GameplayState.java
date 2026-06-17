@@ -35,6 +35,7 @@ public class GameplayState extends BaseAppState {
     private BlockEffectSystem blockEffect;
     private CoralGrowthSystem coralGrowth;
     private PlayerControlState playerControl;
+    private HeldWeaponState heldWeapon;
     private HudState hud;
     private RoundBannerState roundBanner;
 
@@ -81,6 +82,9 @@ public class GameplayState extends BaseAppState {
         playerControl = new PlayerControlState(ed, playerId, gameStateId, blockEffect);
         getStateManager().attach(playerControl);
 
+        heldWeapon = new HeldWeaponState(ed, playerId);
+        getStateManager().attach(heldWeapon);
+
         hud = new HudState(ed, gameStateId, playerId);
         getStateManager().attach(hud);
 
@@ -98,6 +102,7 @@ public class GameplayState extends BaseAppState {
     protected void cleanup(Application app) {
         getStateManager().detach(roundBanner);
         getStateManager().detach(hud);
+        getStateManager().detach(heldWeapon);
         getStateManager().detach(playerControl);
         getStateManager().detach(poison);
         getStateManager().detach(destructionFx);

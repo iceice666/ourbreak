@@ -77,6 +77,8 @@ public class DestructionFxState extends BaseAppState {
         this.assetManager = app.getAssetManager();
         this.blocks = ed.getEntities(BlockComponent.class, PositionComponent.class, ModelComponent.class);
         this.fxNode = new Node("destruction-fx");
+        // FX (translucent dust/fireballs) shouldn't cast shadows — only the solid world does.
+        this.fxNode.setShadowMode(com.jme3.renderer.queue.RenderQueue.ShadowMode.Off);
     }
 
     @Override

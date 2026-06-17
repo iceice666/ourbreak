@@ -1,15 +1,15 @@
 # ourbreak
 
 A first-person **beach-siege endless survival** game. You play Openclaw the destroyer:
-each round an NPC builds a 3D wall around its mascot, and you have a limited time to tear
-the whole wall down before the clock runs out. Survive to advance — the wall gets bigger
-and the pressure rises every round. Your score is how far you get.
+each round an NPC builds up a fortified **crab village** around its mascot, and you have a
+limited time to tear every building down before the clock runs out. Survive to advance —
+the village gets bigger and the pressure rises every round. Your score is how far you get.
 
 Built with **Java 21 + jMonkeyEngine 3.9 + Zay-ES (ECS) + Lemur (UI)**. MIT licensed.
 
 ## Gameplay
 
-📹 **[Gameplay videos (Google Drive)](https://drive.google.com/drive/folders/1PX8SBM3ZS3v7FYbvHv5lShIvldhKZ7L2?usp=sharing)**
+📹 **[▶ Latest gameplay demo (Google Drive)](https://drive.google.com/drive/folders/1PX8SBM3ZS3v7FYbvHv5lShIvldhKZ7L2?usp=sharing)** — updated build showing the crab-village siege, the lighting pass (sun / shadows / god rays) and the first-person weapons.
 
 ## How to play
 
@@ -21,10 +21,11 @@ Built with **Java 21 + jMonkeyEngine 3.9 + Zay-ES (ECS) + Lemur (UI)**. MIT lice
 | Switch weapon | `1` Sword · `2` Gun · `3` Drone (`Q` cycles) |
 | Confirm / Back | `Enter` / `Esc` |
 
-- **Sword** sweeps a row of soft blocks. **Gun** one-shots any single block (the clean
-  answer to Coral and Jellyfish). **Drone** bombs a 3×3 area — but bombing a Jellyfish
-  poisons you and bombing Shells makes them split.
-- **Coral** regrows the wall while alive (kill it with the Gun), **Rock** is tanky (use
+- **Sword** is melee — get in close to sweep a row of blocks (the poison-free way to clear
+  Jellyfish). **Gun** one-shots any single block at range (the clean answer to Coral and
+  Jellyfish). **Drone** bombs a 3D blast sphere that grows each round (its **Lv** shows on
+  the HUD) — but bombing a Jellyfish poisons you and bombing Shells makes them split.
+- **Coral** regrows the village while alive (kill it with the Gun), **Rock** is tanky (use
   the Drone), **Shell** splits under Sword/Drone, **Jellyfish** poisons you if droned.
 
 See the in-game **How to Play** screen for the full reference.
@@ -59,13 +60,18 @@ Systems read/write the shared ECS each frame:
 ```mermaid
 flowchart TD
     PC[PlayerControlState<br/>move - look - attack] -->|attack| WS[WeaponSystem]
+    PC -->|reach + area| BE[BlockEffectSystem<br/>drone sphere - coral slow]
+    PC -->|swing| HW[HeldWeaponState<br/>3D weapon viewmodel]
     WS -->|damage / shell split| ED[(EntityData - ECS)]
-    NB[NpcBuilderSystem] -->|place blocks| ED
+    VG[VillageGenerator<br/>seeded crab houses] --> NB[NpcBuilderSystem]
+    NB -->|place blocks| ED
     CG[CoralGrowthSystem] -->|coral regrowth| ED
     RS[RoundSystem] -->|round - phase - timer| ED
     VS[VictorySystem] -->|win / lose| ED
     ED --> MV[ModelViewState<br/>render blocks]
+    ED --> FX[DestructionFxState<br/>debris + drone explosion]
     ED --> HUD[HudState]
+    ED --> RB[RoundBannerState<br/>round-clear banner]
     ED --> PZ[PoisonState<br/>jellyfish poison]
     ED --> MC[MascotState<br/>crab + flee]
 ```
