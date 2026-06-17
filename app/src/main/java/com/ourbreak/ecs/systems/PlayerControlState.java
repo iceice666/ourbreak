@@ -73,6 +73,10 @@ public class PlayerControlState extends BaseAppState {
     private static final float EDGE_TURN_SPEED = 1.8f;
     /** Where the NPC builds the wall (the mascot at the origin) — the player faces this at spawn. */
     private static final Vector3f WALL_CENTRE = new Vector3f(0f, 0f, 0f);
+    /** Sword is melee: it only reaches blocks you're standing next to. */
+    private static final float SWORD_REACH = 4.5f;
+    /** Gun and drone are ranged: they hit anywhere in the arena under the crosshair. */
+    private static final float RANGED_REACH = 200f;
 
     private final EntityData ed;
     private final EntityId playerId;
@@ -356,13 +360,16 @@ public class PlayerControlState extends BaseAppState {
     }
 
     private void attack() {
-        EntityId target = pickBlockUnderCrosshair();
-        if (target == null) {
-            return;
-        }
         // DRONE bombs a (2·level+1)² area that grows with the round; SWORD sweeps a 3-cell row; GUN single.
         WeaponComponent weapon = ed.getComponent(playerId, WeaponComponent.class);
         WeaponType weaponType = weapon != null ? weapon.weaponType() : WeaponType.SWORD;
+        // The sword is melee — it only connects with blocks within arm's reach, so you have to close in;
+        // the gun and drone strike at range. (You still swing on a whiff, just hit nothing.)
+        float reach = weaponType == WeaponType.SWORD ? SWORD_REACH : RANGED_REACH;
+        EntityId target = pickBlockUnderCrosshair(reach);
+        if (target == null) {
+            return;
+        }
         int droneRadius = WeaponSystem.droneLevelForRound(currentRound());
         Collection<EntityId> targets = switch (weaponType) {
             case DRONE -> blockEffect.droneAreaTargets(target, droneRadius);
@@ -407,7 +414,7 @@ public class PlayerControlState extends BaseAppState {
         }
     }
 
-    private EntityId pickBlockUnderCrosshair() {
+    private EntityId pickBlockUnderCrosshair(float maxReach) {
         Ray ray = new Ray(camera.getLocation(), camera.getDirection());
         CollisionResults results = new CollisionResults();
         rootNode.collideWith(ray, results);
@@ -419,7 +426,8 @@ public class PlayerControlState extends BaseAppState {
             for (Spatial s = hit.getGeometry(); s != null; s = s.getParent()) {
                 Long rawId = s.getUserData(ModelViewSynchronizer.ENTITY_ID_USER_DATA);
                 if (rawId != null) {
-                    return new EntityId(rawId);
+                    // The nearest block under the crosshair — only a hit if it's within the weapon's reach.
+                    return hit.getDistance() <= maxReach ? new EntityId(rawId) : null;
                 }
             }
         }
