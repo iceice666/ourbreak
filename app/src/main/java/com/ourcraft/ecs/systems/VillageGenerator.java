@@ -91,18 +91,19 @@ public final class VillageGenerator {
     }
 
     private static List<PlacedBlock> buildHouse(int ax, int az, List<BlockType> palette, Random rng) {
-        boolean tower = rng.nextInt(4) == 0; // ~25% are tall towers
+        // Minimum 3×3 so every house is hollow (a 2×2 would be a solid block — no interior, wasted budget).
+        boolean tower = rng.nextInt(5) == 0; // ~20% are tall thin towers
         int w;
         int d;
         int h;
         if (tower) {
-            w = 2;
-            d = 2;
-            h = 4 + rng.nextInt(3); // 4..6
+            w = 3;
+            d = 3;
+            h = 4 + rng.nextInt(3); // 4..6 tall
         } else {
-            w = 2 + rng.nextInt(2); // 2..3
-            d = 2 + rng.nextInt(2);
-            h = 2 + rng.nextInt(2); // 2..3
+            w = 3 + rng.nextInt(2); // 3..4
+            d = 3 + rng.nextInt(2);
+            h = 2 + rng.nextInt(2); // 2..3 tall walls
         }
 
         boolean mixed = palette.size() >= 2 && rng.nextDouble() < MIXED_CHANCE;
@@ -110,7 +111,7 @@ public final class VillageGenerator {
         int doorSide = rng.nextInt(4);
 
         List<PlacedBlock> blocks = new ArrayList<>();
-        // Hollow walls.
+        // Hollow walls with a 2-tall doorway.
         for (int y = 0; y < h; y++) {
             for (int dx = 0; dx < w; dx++) {
                 for (int dz = 0; dz < d; dz++) {
@@ -118,20 +119,43 @@ public final class VillageGenerator {
                     if (!border) {
                         continue;
                     }
-                    if (y == 0 && isDoor(dx, dz, w, d, doorSide)) {
-                        continue; // leave a doorway at ground level
+                    if (y <= 1 && isDoor(dx, dz, w, d, doorSide)) {
+                        continue; // leave a 2-tall doorway
                     }
                     blocks.add(cell(ax + dx, y, az + dz, theme, palette, rng));
                 }
             }
         }
-        // Flat roof.
-        for (int dx = 0; dx < w; dx++) {
-            for (int dz = 0; dz < d; dz++) {
-                blocks.add(cell(ax + dx, h, az + dz, theme, palette, rng));
+        gabledRoof(ax, az, w, d, h, theme, palette, rng, blocks);
+        return blocks;
+    }
+
+    /** A-frame (gabled) roof: a ridge along the longer axis, sloping down to the eaves on both sides. */
+    private static void gabledRoof(int ax, int az, int w, int d, int h, BlockType theme,
+                                   List<BlockType> palette, Random rng, List<PlacedBlock> out) {
+        if (w >= d) {
+            for (int k = 0; k <= (d - 1) / 2; k++) {
+                int z0 = k;
+                int z1 = d - 1 - k;
+                for (int x = 0; x < w; x++) {
+                    out.add(cell(ax + x, h + k, az + z0, theme, palette, rng));
+                    if (z1 != z0) {
+                        out.add(cell(ax + x, h + k, az + z1, theme, palette, rng));
+                    }
+                }
+            }
+        } else {
+            for (int k = 0; k <= (w - 1) / 2; k++) {
+                int x0 = k;
+                int x1 = w - 1 - k;
+                for (int z = 0; z < d; z++) {
+                    out.add(cell(ax + x0, h + k, az + z, theme, palette, rng));
+                    if (x1 != x0) {
+                        out.add(cell(ax + x1, h + k, az + z, theme, palette, rng));
+                    }
+                }
             }
         }
-        return blocks;
     }
 
     private static PlacedBlock cell(int x, int y, int z, BlockType theme, List<BlockType> palette, Random rng) {
