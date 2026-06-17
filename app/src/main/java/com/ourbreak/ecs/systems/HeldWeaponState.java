@@ -149,24 +149,34 @@ public class HeldWeaponState extends BaseAppState {
         float bobX = FastMath.sin(bobTime) * ampX;
         float bobY = FastMath.abs(FastMath.cos(bobTime)) * ampY;
 
-        // Attack motion: the sword/drone chop down and forward; the gun recoils — muzzle kicks UP and
-        // the whole weapon punches back toward the eye. Both ease in and out over the swing window.
-        float swingPitch = 0f;
+        // Attack motion, eased in and out over the swing window (s: 0→1→0). Each weapon moves
+        // differently: the sword slashes diagonally across the view (roll-led, not a forward flop), the
+        // gun recoils (muzzle up + punch back toward the eye), the drone gives a small forward dip.
+        Quaternion swingRot = new Quaternion();
         float swingPush = 0f;
         if (swingTime > 0f) {
             swingTime = Math.max(0f, swingTime - tpf);
-            float s = FastMath.sin((1f - swingTime / SWING_DURATION) * FastMath.PI); // 0→1→0
-            if (shown == WeaponType.GUN) {
-                swingPitch = s * 0.8f;   // muzzle up (recoil), not a downward dip
-                swingPush = s * 0.08f;   // kick back toward the camera
-            } else {
-                swingPitch = -s * 0.9f;  // chop down and forward
-                swingPush = s * 0.06f;
+            float s = FastMath.sin((1f - swingTime / SWING_DURATION) * FastMath.PI);
+            switch (shown) {
+                case GUN -> {
+                    swingRot.fromAngles(s * 0.8f, 0f, 0f); // muzzle kicks up
+                    swingPush = s * 0.08f;                 // and back toward the camera
+                }
+                case SWORD -> {
+                    // Downward diagonal chop: the blade drives forward-and-down from the upper-left rest
+                    // toward the lower-right (pitch-led, not a windmill around the view axis).
+                    swingRot.fromAngles(-s * 0.7f, -s * 0.3f, -s * 0.55f);
+                    swingPush = s * 0.05f;
+                }
+                case DRONE -> {
+                    swingRot.fromAngles(-s * 0.45f, 0f, 0f); // small forward dip
+                    swingPush = s * 0.05f;
+                }
             }
         }
 
         holder.setLocalTranslation(BASE_POS.x + bobX, BASE_POS.y - bobY, BASE_POS.z + swingPush);
-        holder.setLocalRotation(new Quaternion().fromAngles(swingPitch, 0f, 0f));
+        holder.setLocalRotation(swingRot);
 
         if (droneRotors != null) {
             droneRotors.rotate(0f, tpf * 40f, 0f); // blades whirring

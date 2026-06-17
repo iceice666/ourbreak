@@ -49,9 +49,13 @@ final class WeaponModels {
         Geometry tip = part(am, "sword-tip", new Box(0.042f, 0.06f, 0.012f), STEEL, 0f, 0.78f, 0f, 1f, 1f, 1f);
         tip.rotate(0f, 0f, FastMath.QUARTER_PI); // diamond point above the blade
         n.attachChild(tip);
-        // Posed for the hand: blade up, tip angled forward and slightly across the view.
-        n.setLocalRotation(new Quaternion().fromAngles(-0.5f, 0.18f, 0.34f));
-        n.setLocalScale(0.85f);
+        // Posed like Minecraft's first-person sword: hilt low-right, blade up to the upper-left at a
+        // ~45° diagonal. Two rotations: a twist about the blade's own length so we see it in 3D (its
+        // thickness/edge, not a flat plank facing the eye), then the diagonal held tilt.
+        Quaternion twist = new Quaternion().fromAngles(0f, 0.9f, 0f);
+        Quaternion tilt = new Quaternion().fromAngles(-0.22f, 0.15f, 0.72f);
+        n.setLocalRotation(tilt.mult(twist));
+        n.setLocalScale(0.5f);
         return n;
     }
 
