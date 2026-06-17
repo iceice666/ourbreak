@@ -2,6 +2,7 @@
 junit-jupiter = "6.1.0"
 jme3 = "3.9.0-stable"
 zay-es = "1.6.0"
+lemur = "1.16.0"
 guava = "33.6.0-jre"
 
 [libraries]
@@ -15,6 +16,7 @@ jme3-plugins = { module = "org.jmonkeyengine:jme3-plugins", version.ref = "jme3"
 jme3-effects = { module = "org.jmonkeyengine:jme3-effects", version.ref = "jme3" }
 
 zay-es = { module = "com.simsilica:zay-es", version.ref = "zay-es" }
+lemur = { module = "com.simsilica:lemur", version.ref = "lemur" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 
 [bundles]

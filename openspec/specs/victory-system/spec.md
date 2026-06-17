@@ -2,54 +2,49 @@
 
 ## Purpose
 
-The `VictorySystem` monitors game-state and block presence each update tick to determine when the game is won or lost, writing the outcome to `GameResultComponent` exactly once.
+The `VictorySystem` drives endless-survival progression each update tick: clearing a round's wall advances the run to the next round; the attack timer expiring with blocks remaining ends the run (LOSS). There is no win state.
 
 ---
 
 ## Requirements
 
-### Requirement: Immediate win on blocks cleared
-During ATTACK phase, when no entities tagged with `BlockComponent` exist, the system SHALL set `GameResultComponent` to
-WIN. Block clearance SHALL take precedence over final-round timer expiry evaluated in the same update.
+### Requirement: Round survived advances the run
+During ATTACK phase, when no entities tagged with `BlockComponent` exist, the system SHALL treat the round as survived and advance the run to the next round (via the round system's advance operation) rather than setting a win. Clearance SHALL take precedence over a simultaneous timer expiry.
 
-#### Scenario: Win when all blocks destroyed during attack
+#### Scenario: Survive and advance when all blocks destroyed during attack
 - **WHEN** in ATTACK phase and no `BlockComponent` entities exist
-- **THEN** `GameResultComponent` = WIN
+- **THEN** the run advances to the next round (currentRound + 1, phase BUILD, timer reset) and the result stays IN_PROGRESS
 
-#### Scenario: Win on simultaneous clearance and expiry
-- **WHEN** the final ATTACK round timer is zero and no `BlockComponent` entities remain
-- **THEN** `GameResultComponent` = WIN rather than LOSS
+#### Scenario: Survival takes precedence over simultaneous timeout
+- **WHEN** the ATTACK timer is zero and no `BlockComponent` entities remain
+- **THEN** the round is survived (advance) rather than a game over
 
-#### Scenario: No win during BUILD phase
+#### Scenario: No advance during BUILD phase
 - **WHEN** in BUILD phase and no `BlockComponent` entities exist
-- **THEN** `GameResultComponent` is unchanged
+- **THEN** the round does not advance and the result is unchanged
 
-#### Scenario: No win when blocks remain
+#### Scenario: No advance when blocks remain
 - **WHEN** in ATTACK phase and at least one `BlockComponent` entity exists
-- **THEN** `GameResultComponent` is not set to WIN
+- **THEN** the round does not advance
 
 ---
 
-### Requirement: Loss on final round timer expiry with blocks remaining
-When the final round's ATTACK phase ends (timer == 0, currentRound == maxRounds) and at least one `BlockComponent` entity still exists, the system SHALL set `GameResultComponent` to LOSS.
+### Requirement: Game over on timer expiry with blocks remaining
+When any round's ATTACK phase ends (timer == 0) and at least one `BlockComponent` entity still exists, the system SHALL set `GameResultComponent` to LOSS. This applies to every round, not only a final one.
 
-#### Scenario: Loss at end of final round with blocks present
-- **WHEN** currentRound = 4 = maxRounds, ATTACK phase timer has reached 0, and at least one `BlockComponent` entity exists
-- **THEN** `GameResultComponent` = LOSS
+#### Scenario: Game over when the timer expires with blocks present
+- **WHEN** the ATTACK timer has reached 0 and at least one `BlockComponent` entity exists
+- **THEN** `GameResultComponent` = LOSS regardless of the round number
 
-#### Scenario: No loss on non-final round timer expiry
-- **WHEN** currentRound = 2, maxRounds = 4, and the ATTACK timer expires
+#### Scenario: No game over while time remains
+- **WHEN** the ATTACK timer is above 0 and blocks remain
 - **THEN** `GameResultComponent` remains IN_PROGRESS
 
 ---
 
-### Requirement: Idempotent outcome
-Once `GameResultComponent` is set to WIN or LOSS, the system SHALL NOT overwrite it on subsequent updates.
+### Requirement: Idempotent game over
+Once `GameResultComponent` is set to LOSS, the system SHALL NOT overwrite it on subsequent updates.
 
-#### Scenario: No double-write after win
-- **WHEN** `GameResultComponent` = WIN and the system updates again
-- **THEN** `GameResultComponent` remains WIN
-
-#### Scenario: No double-write after loss
+#### Scenario: No double-write after game over
 - **WHEN** `GameResultComponent` = LOSS and the system updates again
 - **THEN** `GameResultComponent` remains LOSS

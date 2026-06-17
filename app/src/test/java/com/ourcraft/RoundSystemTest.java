@@ -40,7 +40,6 @@ class RoundSystemTest {
     @Test
     void initialState() {
         assertEquals(1, round().currentRound());
-        assertEquals(4, round().maxRounds());
         assertEquals(Phase.BUILD, phase().phase());
         assertEquals(Result.IN_PROGRESS, result().result());
         assertEquals(ATTACK_DURATION, round().remainingSeconds(), 0.001);
@@ -61,10 +60,9 @@ class RoundSystemTest {
     }
 
     @Test
-    void timerClampsToZeroAtFinalRound() {
-        // Put game at final round so no advancement fires, just the clamp
+    void timerClampsToZero() {
         system.beginAttackPhase();
-        ed.setComponent(gsId, new RoundComponent(4, 4, 10.0));
+        ed.setComponent(gsId, new RoundComponent(1, 10.0));
         system.update(15.0f);
         assertEquals(0.0, round().remainingSeconds(), 0.001);
     }
@@ -77,40 +75,59 @@ class RoundSystemTest {
     }
 
     @Test
-    void nonFinalRoundAdvancesOnTimerExpiry() {
+    void timerExpiryDoesNotAdvanceTheRound() {
+        // Endless: the timer only ticks; surviving (clearing) advances the round, not the clock.
         system.beginAttackPhase();
         system.update(61.0f);
-        assertEquals(2, round().currentRound());
-        assertEquals(Phase.BUILD, phase().phase());
-        assertEquals(Result.IN_PROGRESS, result().result());
-        assertEquals(ATTACK_DURATION, round().remainingSeconds(), 0.001);
+        assertEquals(1, round().currentRound());
+        assertEquals(Phase.ATTACK, phase().phase());
+        assertEquals(0.0, round().remainingSeconds(), 0.001);
     }
 
     @Test
-    void noOverwriteWhenResultAlreadySet() {
-        // Mark WIN before the final-round timer can write LOSS
+    void advanceRoundIncrementsRoundResetsTimerAndEntersBuild() {
         system.beginAttackPhase();
-        ed.setComponent(gsId, new RoundComponent(4, 4, 60.0));
-        ed.setComponent(gsId, new GameResultComponent(Result.WIN));
+        system.update(20.0f);
 
-        system.update(61.0f);
+        system.advanceRound();
 
-        assertEquals(Result.WIN, result().result());
+        assertEquals(2, round().currentRound());
+        assertEquals(Phase.BUILD, phase().phase());
+        assertEquals(ATTACK_DURATION, round().remainingSeconds(), 0.001);
+        assertEquals(Result.IN_PROGRESS, result().result());
+    }
+
+    @Test
+    void advanceRoundIsUnbounded() {
+        ed.setComponent(gsId, new RoundComponent(7, 5.0));
+        system.advanceRound();
+        assertEquals(8, round().currentRound());
+    }
+
+    @Test
+    void advanceRoundIsNoOpAfterGameOver() {
+        ed.setComponent(gsId, new GameResultComponent(Result.LOSS));
+        RoundComponent before = round();
+
+        system.advanceRound();
+
+        assertEquals(before, round());
+        assertEquals(Phase.BUILD, phase().phase());
     }
 
     @Test
     void repeatedInitializationPreservesOriginalEntityAndState() {
         ed.setComponents(gsId,
-                new RoundComponent(3, 4, 12.5),
+                new RoundComponent(3, 12.5),
                 new PhaseComponent(Phase.ATTACK),
-                new GameResultComponent(Result.WIN));
+                new GameResultComponent(Result.LOSS));
 
         system.initialize();
 
         assertEquals(gsId, system.getGameStateId());
-        assertEquals(new RoundComponent(3, 4, 12.5), round());
+        assertEquals(new RoundComponent(3, 12.5), round());
         assertEquals(new PhaseComponent(Phase.ATTACK), phase());
-        assertEquals(new GameResultComponent(Result.WIN), result());
+        assertEquals(new GameResultComponent(Result.LOSS), result());
     }
 
     @Test
@@ -145,19 +162,6 @@ class RoundSystemTest {
         assertThrows(IllegalArgumentException.class, () -> system.update(tpf));
 
         assertEquals(before, gameState());
-    }
-
-    @Test
-    void existingZeroTimerAdvancesExactlyOnce() {
-        ed.setComponents(gsId,
-                new RoundComponent(1, 4, 0.0),
-                new PhaseComponent(Phase.ATTACK));
-
-        system.update(0.0f);
-        system.update(0.0f);
-
-        assertEquals(new RoundComponent(2, 4, ATTACK_DURATION), round());
-        assertEquals(Phase.BUILD, phase().phase());
     }
 
     @ParameterizedTest

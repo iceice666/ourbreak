@@ -2,6 +2,7 @@ package com.ourcraft.ecs.systems;
 
 import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.BlockComponent.BlockType;
+import com.ourcraft.ecs.components.EffectComponent;
 import com.ourcraft.ecs.components.GameResultComponent;
 import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.ourcraft.ecs.components.ModelComponent;
@@ -24,7 +25,19 @@ import java.util.Set;
 
 public class NpcBuilderSystem {
 
-    public static final int BLOCKS_PER_ROUND = 8;
+    // Onboarding ramp (rounds 1–4): a flat +8 blocks per round while the mechanics are introduced.
+    public static final int BASE_BLOCKS = 16;
+    public static final int BLOCKS_STEP = 8;
+    /** Round at which the endless required-clear-rate ramp takes over (continuous with round-5 = 48). */
+    public static final int ENDLESS_FROM_ROUND = 5;
+    /** Required clear-rate (blocks/sec) at the start of the endless ramp. */
+    private static final double RATE_BASE = 0.80;
+    /** Asymptotic required clear-rate the ramp approaches but never reaches (kept below the human max). */
+    private static final double RATE_MAX = 1.20;
+    /** Per-round decay of the remaining rate margin — shrinking increments, so difficulty never spikes. */
+    private static final double RATE_DECAY = 0.85;
+    /** Blocks stack this many high per grid cell before the wall expands outward (3D fortress). */
+    public static final int WALL_HEIGHT = 3;
 
     private final EntityData ed;
     private final RoundSystem roundSystem;
@@ -58,7 +71,8 @@ public class NpcBuilderSystem {
             activeRound = round.currentRound();
             placementsThisRound = 0;
         }
-        if (placementsThisRound >= BLOCKS_PER_ROUND) {
+        int quota = blocksForRound(activeRound);
+        if (placementsThisRound >= quota) {
             return;
         }
 
@@ -77,9 +91,11 @@ public class NpcBuilderSystem {
                 placement,
                 new BlockComponent(blockType),
                 new ModelComponent(modelId(blockType)));
+        EffectComponent.forBlockType(blockType)
+                .ifPresent(effect -> ed.setComponent(blockId, effect));
 
         placementsThisRound++;
-        if (placementsThisRound == BLOCKS_PER_ROUND) {
+        if (placementsThisRound == quota) {
             roundSystem.beginAttackPhase();
         }
     }
@@ -106,20 +122,23 @@ public class NpcBuilderSystem {
             occupied.add(block.get(PositionComponent.class));
         }
 
+        // 3D concentric wall: fill a ring all around, stack it WALL_HEIGHT tall, then expand outward.
         int candidatesToCheck = occupied.size() + 1;
         int checked = 0;
         for (int radius = 1; checked < candidatesToCheck; radius++) {
-            for (GridOffset offset : ringOffsets(radius)) {
-                PositionComponent candidate = new PositionComponent(
-                        mascotPosition.x() + offset.x(),
-                        mascotPosition.y(),
-                        mascotPosition.z() + offset.z());
-                if (!occupied.contains(candidate)) {
-                    return candidate;
-                }
-                checked++;
-                if (checked == candidatesToCheck) {
-                    break;
+            for (int layer = 0; layer < WALL_HEIGHT && checked < candidatesToCheck; layer++) {
+                for (GridOffset offset : ringOffsets(radius)) {
+                    PositionComponent candidate = new PositionComponent(
+                            mascotPosition.x() + offset.x(),
+                            mascotPosition.y() + layer,
+                            mascotPosition.z() + offset.z());
+                    if (!occupied.contains(candidate)) {
+                        return candidate;
+                    }
+                    checked++;
+                    if (checked == candidatesToCheck) {
+                        break;
+                    }
                 }
             }
         }
@@ -154,13 +173,37 @@ public class NpcBuilderSystem {
         return offsets;
     }
 
+    /**
+     * Blocks the NPC builds for a round. Rounds 1–4 are the onboarding ramp (16/24/32/40). From round 5
+     * the wall grows without bound: the <em>required clear-rate</em> {@code ρ(r)} rises asymptotically
+     * toward {@link #RATE_MAX} with shrinking increments (so it never spikes and is always theoretically
+     * survivable), the attack time grows slowly ({@link RoundSystem#attackSecondsForRound}), and the
+     * count is {@code round(ρ(r) × time(r))} — so the wall keeps getting bigger every round forever.
+     */
+    public static int blocksForRound(int round) {
+        if (round < 1) {
+            throw new IllegalStateException("no block quota for round " + round);
+        }
+        if (round < ENDLESS_FROM_ROUND) {
+            return BASE_BLOCKS + (round - 1) * BLOCKS_STEP;
+        }
+        double rate = RATE_MAX - (RATE_MAX - RATE_BASE) * Math.pow(RATE_DECAY, round - ENDLESS_FROM_ROUND);
+        return (int) Math.round(rate * RoundSystem.attackSecondsForRound(round));
+    }
+
     private List<BlockType> blockScript(int round) {
         return switch (round) {
             case 1 -> List.of(BlockType.SAND);
             case 2 -> List.of(BlockType.SAND, BlockType.CORAL);
             case 3 -> List.of(BlockType.ROCK, BlockType.SHELL);
             case 4 -> List.of(BlockType.ROCK, BlockType.JELLYFISH);
-            default -> throw new IllegalStateException("no NPC build script for round " + round);
+            default -> {
+                if (round < 1) {
+                    throw new IllegalStateException("no NPC build script for round " + round);
+                }
+                // Round 5+: the full gauntlet — tanky rock plus every effect block.
+                yield List.of(BlockType.ROCK, BlockType.SHELL, BlockType.JELLYFISH, BlockType.CORAL);
+            }
         };
     }
 

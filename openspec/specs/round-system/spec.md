@@ -9,13 +9,13 @@ The `RoundSystem` manages the game-state entity that tracks round progression, p
 ## Requirements
 
 ### Requirement: Game state singleton
-The system SHALL maintain exactly one game-state entity holding `RoundComponent` (currentRound, maxRounds),
-`PhaseComponent` (BUILD | ATTACK), and `GameResultComponent` (IN_PROGRESS | WIN | LOSS). Initialization SHALL be
-idempotent for each `RoundSystem` instance.
+The system SHALL maintain exactly one game-state entity holding `RoundComponent` (currentRound, remainingSeconds — no
+maximum-round cap), `PhaseComponent` (BUILD | ATTACK), and `GameResultComponent` (IN_PROGRESS | LOSS). Initialization
+SHALL be idempotent for each `RoundSystem` instance.
 
 #### Scenario: Initial state on system start
 - **WHEN** the game starts and `RoundSystem` initializes
-- **THEN** currentRound = 1, maxRounds = 4, phase = BUILD, result = IN_PROGRESS, remainingSeconds = 60.0
+- **THEN** currentRound = 1, phase = BUILD, result = IN_PROGRESS, remainingSeconds = 60.0
 
 #### Scenario: Repeated initialization
 - **WHEN** `initialize()` is called again on an initialized round system
@@ -63,38 +63,20 @@ tick, clamped to a minimum of zero. Invalid elapsed time SHALL be rejected witho
 
 ---
 
-### Requirement: Round advancement on timer expiry
-When the ATTACK phase timer reaches 0 and the current round is not the final round, the system SHALL increment `currentRound` by 1 and transition to BUILD phase with the timer reset.
+### Requirement: Round advancement on survival
+The system SHALL expose an operation that advances the run to the next round — incrementing `currentRound` by 1 and entering BUILD phase with the timer reset to 60 seconds — and SHALL do so only while the game is IN_PROGRESS. There SHALL be no upper bound on the round number.
 
-#### Scenario: Advance to next round
-- **WHEN** currentRound = 1, maxRounds = 4, and the ATTACK timer expires
-- **THEN** currentRound = 2, phase = BUILD, remainingSeconds = 60.0, result = IN_PROGRESS
+#### Scenario: Advance after surviving a round
+- **WHEN** the current round's wall has been cleared and the round is advanced
+- **THEN** currentRound increases by 1, phase = BUILD, remainingSeconds = 60.0, result = IN_PROGRESS
 
-#### Scenario: No result written on non-final round expiry
-- **WHEN** currentRound = 2, maxRounds = 4, and the ATTACK timer expires
-- **THEN** `GameResultComponent` remains IN_PROGRESS
+#### Scenario: Rounds are unbounded
+- **WHEN** the run has already advanced past round 4
+- **THEN** the round continues to increment (5, 6, …) with no maximum
 
----
-
-### Requirement: No duplicate game result write
-The system SHALL NOT overwrite `GameResultComponent` if it is already WIN or LOSS.
-
-#### Scenario: Timer expires but result is already set
-- **WHEN** currentRound = 4, timer reaches 0, and `GameResultComponent` is already WIN
-- **THEN** `GameResultComponent` remains WIN
-
----
-
-### Requirement: Existing zero-time boundary
-An IN_PROGRESS non-final ATTACK round already at zero remaining seconds SHALL advance exactly once on update.
-
-#### Scenario: Advance from an existing zero timer
-- **WHEN** a non-final ATTACK round begins an update with zero remaining seconds
-- **THEN** the next round starts in BUILD with the timer reset to 60 seconds
-
-#### Scenario: No repeated advancement
-- **WHEN** an existing zero timer advances the round to BUILD
-- **THEN** subsequent BUILD updates do not advance additional rounds
+#### Scenario: No advance after game over
+- **WHEN** the result is LOSS and an advance is requested
+- **THEN** round, phase, and timer state remain unchanged
 
 ---
 

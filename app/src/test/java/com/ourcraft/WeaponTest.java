@@ -7,13 +7,17 @@ import com.ourcraft.ecs.components.GameResultComponent.Result;
 import com.ourcraft.ecs.components.MascotComponent;
 import com.ourcraft.ecs.components.PhaseComponent;
 import com.ourcraft.ecs.components.PhaseComponent.Phase;
+import com.ourcraft.ecs.components.PositionComponent;
 import com.ourcraft.ecs.components.WeaponComponent;
 import com.ourcraft.ecs.components.WeaponComponent.WeaponType;
 import com.ourcraft.ecs.systems.WeaponSystem;
+import com.simsilica.es.Entity;
 import com.simsilica.es.EntityComponent;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
+import com.simsilica.es.EntitySet;
 import com.simsilica.es.base.DefaultEntityData;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,8 +36,11 @@ import static com.ourcraft.ecs.components.BlockComponent.BlockType.SHELL;
 import static com.ourcraft.ecs.components.WeaponComponent.WeaponType.DRONE;
 import static com.ourcraft.ecs.components.WeaponComponent.WeaponType.GUN;
 import static com.ourcraft.ecs.components.WeaponComponent.WeaponType.SWORD;
+import static com.ourcraft.ecs.systems.WeaponSystem.DRONE_BASE_DAMAGE;
+import static com.ourcraft.ecs.systems.WeaponSystem.GUN_BASE_DAMAGE;
 import static com.ourcraft.ecs.systems.WeaponSystem.NEUTRAL_MULTIPLIER;
 import static com.ourcraft.ecs.systems.WeaponSystem.STRONG_MULTIPLIER;
+import static com.ourcraft.ecs.systems.WeaponSystem.SWORD_BASE_DAMAGE;
 import static com.ourcraft.ecs.systems.WeaponSystem.WEAK_MULTIPLIER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -55,23 +62,26 @@ class WeaponTest {
         system = new WeaponSystem(ed, gameStateId);
     }
 
+    @AfterEach
+    void tearDown() {
+        system.close();
+    }
+
     @Test
     void completeCounterMatrixUsesAssignedMultipliers() {
+        // SHELL is excluded — it is governed by the split mechanic, not the damage model (see shell tests).
         assertMultiplier(SWORD, SAND, STRONG_MULTIPLIER);
         assertMultiplier(SWORD, CORAL, WEAK_MULTIPLIER);
-        assertMultiplier(SWORD, SHELL, WEAK_MULTIPLIER);
         assertMultiplier(SWORD, ROCK, NEUTRAL_MULTIPLIER);
         assertMultiplier(SWORD, JELLYFISH, NEUTRAL_MULTIPLIER);
 
         assertMultiplier(GUN, SAND, NEUTRAL_MULTIPLIER);
         assertMultiplier(GUN, CORAL, STRONG_MULTIPLIER);
-        assertMultiplier(GUN, SHELL, NEUTRAL_MULTIPLIER);
         assertMultiplier(GUN, ROCK, WEAK_MULTIPLIER);
         assertMultiplier(GUN, JELLYFISH, STRONG_MULTIPLIER);
 
         assertMultiplier(DRONE, SAND, STRONG_MULTIPLIER);
         assertMultiplier(DRONE, CORAL, NEUTRAL_MULTIPLIER);
-        assertMultiplier(DRONE, SHELL, WEAK_MULTIPLIER);
         assertMultiplier(DRONE, ROCK, STRONG_MULTIPLIER);
         assertMultiplier(DRONE, JELLYFISH, WEAK_MULTIPLIER);
     }
@@ -208,14 +218,100 @@ class WeaponTest {
         assertNull(ed.getComponent(block, BlockComponent.class));
     }
 
+    @Test
+    void swordShattersShellIntoTwo() {
+        EntityId player = createPlayer(SWORD);
+        EntityId shell = createPositionedShell(0f, 0f, 0f);
+
+        system.attack(player, List.of(shell));
+
+        assertNull(ed.getComponent(shell, BlockComponent.class)); // original gone
+        assertEquals(2L, shellCount());                           // shattered into two
+    }
+
+    @Test
+    void droneShattersEachDestroyedShell() {
+        EntityId player = createPlayer(DRONE);
+        EntityId a = createPositionedShell(0f, 0f, 0f);
+        EntityId b = createPositionedShell(8f, 0f, 0f);
+
+        system.attack(player, List.of(a, b));
+
+        assertEquals(4L, shellCount()); // each of the two splits into two
+    }
+
+    @Test
+    void gunDestroysShellWithoutSplitting() {
+        EntityId player = createPlayer(GUN);
+        EntityId shell = createPositionedShell(0f, 0f, 0f);
+
+        system.attack(player, List.of(shell));
+
+        assertEquals(0L, shellCount());
+    }
+
+    @Test
+    void shellFragmentsCanSplitAgainUncapped() {
+        EntityId player = createPlayer(SWORD);
+        system.attack(player, List.of(createPositionedShell(0f, 0f, 0f)));
+        assertEquals(2L, shellCount());
+
+        system.attack(player, List.of(anyShell())); // hit a fragment with the wrong weapon again
+        assertEquals(3L, shellCount());             // it split too — no cap
+    }
+
+    private EntityId createPositionedShell(float x, float y, float z) {
+        EntityId id = ed.createEntity();
+        ed.setComponents(id, new BlockComponent(SHELL), new PositionComponent(x, y, z));
+        return id;
+    }
+
+    private long shellCount() {
+        EntitySet blocks = ed.getEntities(BlockComponent.class);
+        blocks.applyChanges();
+        long count = 0;
+        for (Entity entity : blocks) {
+            if (entity.get(BlockComponent.class).blockType() == SHELL) {
+                count++;
+            }
+        }
+        blocks.release();
+        return count;
+    }
+
+    private EntityId anyShell() {
+        EntitySet blocks = ed.getEntities(BlockComponent.class);
+        blocks.applyChanges();
+        EntityId found = null;
+        for (Entity entity : blocks) {
+            if (entity.get(BlockComponent.class).blockType() == SHELL) {
+                found = entity.getId();
+                break;
+            }
+        }
+        blocks.release();
+        return found;
+    }
+
     private void assertMultiplier(WeaponType weaponType, BlockType blockType, float multiplier) {
         EntityId player = createPlayer(weaponType);
         EntityId target = ed.createEntity();
-        ed.setComponent(target, new BlockComponent(blockType, 10.0f, 10.0f));
+        // Durability above the largest possible single hit (GUN base 8 × strong 2 = 16) so the block
+        // survives and we can read the applied damage as a multiplier check.
+        ed.setComponent(target, new BlockComponent(blockType, 100.0f, 100.0f));
 
         system.attack(player, List.of(target));
 
-        assertEquals(10.0f - multiplier, block(target).durability());
+        float expectedDamage = baseDamage(weaponType) * multiplier;
+        assertEquals(100.0f - expectedDamage, block(target).durability());
+    }
+
+    private static float baseDamage(WeaponType weaponType) {
+        return switch (weaponType) {
+            case SWORD -> SWORD_BASE_DAMAGE;
+            case GUN -> GUN_BASE_DAMAGE;
+            case DRONE -> DRONE_BASE_DAMAGE;
+        };
     }
 
     private static Stream<Class<? extends EntityComponent>> requiredGameStateComponentTypes() {

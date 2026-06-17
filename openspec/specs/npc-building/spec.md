@@ -26,34 +26,40 @@ The NPC builder SHALL place blocks only while the game result is IN_PROGRESS and
 ---
 
 ### Requirement: Per-round placement quota
-The NPC builder SHALL place exactly eight new blocks per round and SHALL place at most one block per update.
+The NPC builder SHALL place a per-round number of new blocks given by `min(16 + (round - 1) * 8, 48)` — 16, 24, 32, 40, then 48 from round 5 onward — and SHALL place at most one block per update.
 
 #### Scenario: Incremental construction
-- **WHEN** an active BUILD phase has eight placements remaining
-- **THEN** eight consecutive builder updates create one new block each
+- **WHEN** an active BUILD phase has the round's placements remaining
+- **THEN** that many consecutive builder updates each create one new block
+
+#### Scenario: Escalating then capped quota
+- **WHEN** the run progresses from round 1 upward
+- **THEN** the per-round quota rises 16, 24, 32, 40, 48 and stays at 48 for all later rounds
 
 #### Scenario: No premature completion
-- **WHEN** fewer than eight blocks have been placed for the current round
+- **WHEN** fewer than the round's quota of blocks have been placed for the current round
 - **THEN** the phase remains BUILD
 
 ---
 
-### Requirement: Mascot-relative placement priority
-The NPC builder SHALL require a valid mascot position, place blocks on the mascot's XZ grid plane, preserve the mascot's
-Y coordinate, define positive Z as front, and search deterministic concentric rings from the mascot outward.
+### Requirement: Mascot-relative 3D wall placement priority
+The NPC builder SHALL require a valid mascot position, define positive Z as front, and build a 3D concentric wall: for
+each ring radius outward from the mascot, it SHALL fill that ring's ground layer, then stack the same ring up to a fixed
+wall height before expanding to the next radius. The candidate order SHALL be ring radius (outer loop), then layer from
+the mascot's Y upward, then the within-ring order.
 
-Within each ring, the builder SHALL prioritize front center, left and right centers, the remaining front edge in
+Within each ring layer, the builder SHALL prioritize front center, left and right centers, the remaining front edge in
 symmetric pairs, the remaining side edges from front to rear in symmetric pairs, and the remaining rear edge ending at
 rear center.
 
-#### Scenario: First-ring placement order
+#### Scenario: First-ring ground-layer order
 - **WHEN** the mascot is at `(0, 0, 0)` and the first ring is unoccupied
 - **THEN** the first eight positions are `(0, 0, 1)`, `(-1, 0, 0)`, `(1, 0, 0)`, `(-1, 0, 1)`, `(1, 0, 1)`,
-  `(-1, 0, -1)`, `(1, 0, -1)`, and `(0, 0, -1)` in that order
+  `(-1, 0, -1)`, `(1, 0, -1)`, and `(0, 0, -1)` in that order (all at the mascot's Y)
 
 #### Scenario: Translate positions from the mascot
 - **WHEN** the mascot is at a non-origin grid position
-- **THEN** every generated offset is added to the mascot position and every placed block uses the mascot's Y coordinate
+- **THEN** every generated offset is added to the mascot position; stacked layers add to the mascot's Y coordinate
 
 #### Scenario: Missing mascot position
 - **WHEN** an eligible BUILD update runs while the mascot lacks `PositionComponent`
@@ -69,14 +75,14 @@ SHALL continue searching outward through concentric rings, and SHALL leave all e
 - **WHEN** the highest-priority candidate position already contains a block
 - **THEN** the next new block is placed at the first unoccupied candidate position
 
-#### Scenario: Fully occupied first ring
-- **WHEN** all eight first-ring positions are occupied
-- **THEN** the next new block is placed at front center of the second ring
+#### Scenario: Fully occupied first-ring ground layer stacks up
+- **WHEN** all eight first-ring ground-layer positions are occupied
+- **THEN** the next new block stacks up to front center of the first ring one layer higher (before expanding outward)
 
 #### Scenario: Preserve surviving defenses
 - **WHEN** a new BUILD phase starts with blocks surviving from an earlier round
-- **THEN** the surviving entities retain their type, durability, and position while eight additional blocks are placed
-  in unoccupied positions
+- **THEN** the surviving entities retain their type, durability, and position while the round's quota of additional
+  blocks is placed in unoccupied positions
 
 #### Scenario: Refill a destroyed priority position
 - **WHEN** a previously occupied high-priority position is empty at the start of a later BUILD phase
@@ -88,24 +94,16 @@ SHALL continue searching outward through concentric rings, and SHALL leave all e
 The NPC builder SHALL use the successful placement index to repeat the ordered block script assigned to the current
 round.
 
-The scripts SHALL be SAND for round 1, SAND then CORAL for round 2, ROCK then SHELL for round 3, and ROCK then JELLYFISH
-for round 4.
+The scripts SHALL be SAND for round 1, SAND then CORAL for round 2, ROCK then SHELL for round 3, ROCK then JELLYFISH for
+round 4, and ROCK, SHELL, JELLYFISH, then CORAL (the full gauntlet) for round 5 and beyond.
 
-#### Scenario: Round 1 composition
-- **WHEN** the builder completes round 1 construction
-- **THEN** all eight newly placed blocks are SAND
+#### Scenario: Campaign opening rounds
+- **WHEN** the builder completes rounds 1–4
+- **THEN** the placed types follow the per-round scripts (all SAND; alternating SAND/CORAL; ROCK/SHELL; ROCK/JELLYFISH)
 
-#### Scenario: Round 2 composition
-- **WHEN** the builder completes round 2 construction
-- **THEN** the eight newly placed block types alternate SAND and CORAL, starting with SAND
-
-#### Scenario: Round 3 composition
-- **WHEN** the builder completes round 3 construction
-- **THEN** the eight newly placed block types alternate ROCK and SHELL, starting with ROCK
-
-#### Scenario: Round 4 composition
-- **WHEN** the builder completes round 4 construction
-- **THEN** the eight newly placed block types alternate ROCK and JELLYFISH, starting with ROCK
+#### Scenario: Endless gauntlet from round 5
+- **WHEN** the builder completes round 5 or any later round
+- **THEN** the placed types repeat ROCK, SHELL, JELLYFISH, CORAL in order
 
 ---
 
@@ -121,11 +119,11 @@ type, and a stable type-derived `ModelComponent`.
 ---
 
 ### Requirement: BUILD completion signaling
-After the eighth successful placement in a round, the NPC builder SHALL trigger the existing round transition to ATTACK,
-including resetting the attack timer to its full duration.
+After the round's final (quota-th) successful placement, the NPC builder SHALL trigger the existing round transition to
+ATTACK, including resetting the attack timer to its full duration.
 
 #### Scenario: Complete construction
-- **WHEN** the builder creates the eighth block for the current round
+- **WHEN** the builder creates the last block of the current round's quota
 - **THEN** the phase becomes ATTACK and the attack timer equals 60 seconds
 
 #### Scenario: Remain inactive after completion
@@ -145,8 +143,12 @@ evaluating a build update.
 ---
 
 ### Requirement: Supported NPC round script
-The NPC builder SHALL fail before creating a block when the active BUILD round has no defined block script.
+The NPC builder SHALL support every round number of 1 or greater and SHALL fail before creating a block only for a non-positive round.
 
-#### Scenario: Unsupported round
-- **WHEN** an eligible BUILD update refers to a round outside the configured scripts
+#### Scenario: High round supported
+- **WHEN** an eligible BUILD update runs for round 9
+- **THEN** the builder places blocks using the gauntlet script and the round-9 quota
+
+#### Scenario: Invalid round
+- **WHEN** an eligible BUILD update refers to a round less than 1
 - **THEN** the update fails with an invariant error and creates no block

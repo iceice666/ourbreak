@@ -3,6 +3,8 @@ package com.ourcraft;
 import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.GameResultComponent;
 import com.ourcraft.ecs.components.GameResultComponent.Result;
+import com.ourcraft.ecs.components.PhaseComponent;
+import com.ourcraft.ecs.components.PhaseComponent.Phase;
 import com.ourcraft.ecs.components.RoundComponent;
 import com.ourcraft.ecs.systems.RoundSystem;
 import com.ourcraft.ecs.systems.VictorySystem;
@@ -29,7 +31,7 @@ class VictorySystemTest {
         roundSystem = new RoundSystem(ed);
         roundSystem.initialize();
         gsId = roundSystem.getGameStateId();
-        victorySystem = new VictorySystem(ed, gsId);
+        victorySystem = new VictorySystem(ed, gsId, roundSystem);
     }
 
     @AfterEach
@@ -38,37 +40,35 @@ class VictorySystemTest {
     }
 
     @Test
-    void winWhenNoBlocksInAttackPhase() {
+    void survivingClearsAdvancesToNextRound() {
         roundSystem.beginAttackPhase();
         victorySystem.update(1.0f);
-        assertEquals(Result.WIN, result());
-    }
-
-    @Test
-    void noWinInBuildPhaseEvenWithNoBlocks() {
-        // Phase is BUILD at start — no blocks exist
-        victorySystem.update(1.0f);
+        assertEquals(2, round().currentRound());
+        assertEquals(Phase.BUILD, phase());
         assertEquals(Result.IN_PROGRESS, result());
     }
 
     @Test
-    void noWinWhenBlocksRemainInAttackPhase() {
-        EntityId block = ed.createEntity();
-        ed.setComponents(block, new BlockComponent(ROCK));
-        roundSystem.beginAttackPhase();
+    void noAdvanceInBuildPhaseEvenWithNoBlocks() {
         victorySystem.update(1.0f);
+        assertEquals(1, round().currentRound());
         assertEquals(Result.IN_PROGRESS, result());
     }
 
     @Test
-    void lossAtFinalRoundWhenTimerExpiredWithBlocksRemaining() {
-        EntityId block = ed.createEntity();
-        ed.setComponents(block, new BlockComponent(ROCK));
-
-        // Jump to final round and expire the timer
-        ed.setComponent(gsId, new RoundComponent(4, 4, 60.0));
+    void noAdvanceWhenBlocksRemainInAttackPhase() {
+        addBlock();
         roundSystem.beginAttackPhase();
-        roundSystem.update(61.0f); // timer → 0, no advancement at final round
+        victorySystem.update(1.0f);
+        assertEquals(1, round().currentRound());
+        assertEquals(Result.IN_PROGRESS, result());
+    }
+
+    @Test
+    void gameOverWhenTimerExpiresWithBlocksAtAnyRound() {
+        addBlock();
+        roundSystem.beginAttackPhase();
+        ed.setComponent(gsId, new RoundComponent(3, 0.0)); // not a "final" round — any round
 
         victorySystem.update(0.0f);
 
@@ -76,50 +76,57 @@ class VictorySystemTest {
     }
 
     @Test
-    void blockClearanceWinsAtSimultaneousFinalRoundExpiry() {
+    void survivalTakesPrecedenceOverSimultaneousTimeout() {
         roundSystem.beginAttackPhase();
-        ed.setComponent(gsId, new RoundComponent(4, 4, 0.0));
+        ed.setComponent(gsId, new RoundComponent(2, 0.0)); // timer 0 but no blocks
 
         victorySystem.update(0.0f);
 
-        assertEquals(Result.WIN, result());
-    }
-
-    @Test
-    void noLossOnNonFinalRoundTimerExpiry() {
-        EntityId block = ed.createEntity();
-        ed.setComponents(block, new BlockComponent(ROCK));
-
-        roundSystem.beginAttackPhase();
-        roundSystem.update(61.0f); // advances to round 2 (BUILD)
-
-        victorySystem.update(0.0f);
-
+        assertEquals(3, round().currentRound()); // survived → advanced, not game over
         assertEquals(Result.IN_PROGRESS, result());
     }
 
     @Test
-    void idempotentWin() {
-        roundSystem.beginAttackPhase();
-        victorySystem.update(1.0f); // writes WIN (no blocks)
-        victorySystem.update(1.0f); // must not change it
-        assertEquals(Result.WIN, result());
+    void noGameOverWhileTimeRemains() {
+        addBlock();
+        roundSystem.beginAttackPhase(); // timer = 60
+        victorySystem.update(1.0f);
+        assertEquals(Result.IN_PROGRESS, result());
+        assertEquals(1, round().currentRound());
     }
 
     @Test
-    void idempotentLoss() {
-        EntityId block = ed.createEntity();
-        ed.setComponents(block, new BlockComponent(ROCK));
-
-        ed.setComponent(gsId, new RoundComponent(4, 4, 60.0));
+    void survivalAdvancesOncePerClear() {
         roundSystem.beginAttackPhase();
-        roundSystem.update(61.0f);
+        victorySystem.update(1.0f); // advance to round 2 (BUILD)
+        victorySystem.update(1.0f); // BUILD phase now → no further advance
+        assertEquals(2, round().currentRound());
+    }
+
+    @Test
+    void idempotentGameOver() {
+        addBlock();
+        roundSystem.beginAttackPhase();
+        ed.setComponent(gsId, new RoundComponent(2, 0.0));
         victorySystem.update(0.0f); // writes LOSS
         victorySystem.update(0.0f); // must not change it
         assertEquals(Result.LOSS, result());
     }
 
-    // ── helper ───────────────────────────────────────────────────────────────
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    private void addBlock() {
+        EntityId block = ed.createEntity();
+        ed.setComponents(block, new BlockComponent(ROCK));
+    }
+
+    private RoundComponent round() {
+        return ed.getComponent(gsId, RoundComponent.class);
+    }
+
+    private Phase phase() {
+        return ed.getComponent(gsId, PhaseComponent.class).phase();
+    }
 
     private Result result() {
         return ed.getComponent(gsId, GameResultComponent.class).result();
