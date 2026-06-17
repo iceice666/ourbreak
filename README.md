@@ -9,7 +9,7 @@ Built with **Java 21 + jMonkeyEngine 3.9 + Zay-ES (ECS) + Lemur (UI)**. MIT lice
 
 ## Gameplay
 
-📹 **[Gameplay videos (Google Drive)](https://drive.google.com/drive/folders/1PX8SBM3ZS3v7FYbvHv5lShIvldhKZ7L2?usp=sharing)**
+📹 **[▶ Latest gameplay demo (Google Drive)](https://drive.google.com/drive/folders/1PX8SBM3ZS3v7FYbvHv5lShIvldhKZ7L2?usp=sharing)** — updated build showing the crab-village siege, the lighting pass (sun / shadows / god rays) and the first-person weapons.
 
 ## How to play
 
