@@ -1,11 +1,11 @@
 ---
 name: commit
-description: Create git commits in the ourcraft repo. Enforces Conventional Commits, the per-commit devlog requirement, and devlog immutability. Use when the user asks to commit, write a commit message, split changes into multiple commits, or stage work for a commit.
+description: Create git commits in the ourbreak repo. Enforces Conventional Commits, the per-commit devlog requirement, and devlog immutability. Use when the user asks to commit, write a commit message, split changes into multiple commits, or stage work for a commit.
 ---
 
-# Commit (ourcraft)
+# Commit (ourbreak)
 
-Project-specific commit workflow for the ourcraft repo. Layered on top of the
+Project-specific commit workflow for the ourbreak repo. Layered on top of the
 global `make-commit` skill — that skill covers the generic mechanics of staging,
 splitting, and writing Conventional Commit messages; this skill adds the rules
 that are unique to this repository.

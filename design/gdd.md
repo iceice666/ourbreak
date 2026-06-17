@@ -1,5 +1,5 @@
 # 核心玩法概述
-遊戲名稱: ourcraft
+遊戲名稱: ourbreak
 遊玩時間: 無限生存模式，一局長度取決於撐過的回合數（刷新個人最高紀錄）
 遊戲類型: 第一人稱動作遊戲
 ![Gameplay](img/democoncept.png)
@@ -32,7 +32,7 @@
 ## 世界觀
 Clawd 跟 Openclaw 是海灘上的兩個鄰居，兩個都想在沙灘上蓋自己的夢幻沙堡。
 有一天 Openclaw 不小心把 Clawd 辛苦蓋的沙堡踩爛了，從此兩個就槓上了，每天在沙灘上互相拆對方的堡壘。
-![[ourcraftconcept.png]]
+![[ourbreakconcept.png]]
 
 ## 場景
 - 地點：熱帶沙灘

@@ -40,7 +40,7 @@ blocks. Planned and archived via OpenSpec (`gameplay-ground-plane`).
 
 - **Decision**: dedicated `EnvironmentState` attached by `GameplayState`.
   **Reason**: matches the per-state lifecycle; menu/end screens stay empty.
-  **Alternatives considered**: build the ground in `OurcraftGame.simpleInitApp`
+  **Alternatives considered**: build the ground in `OurbreakGame.simpleInitApp`
   (rejected — would show under the menu and persist across matches).
 
 ---

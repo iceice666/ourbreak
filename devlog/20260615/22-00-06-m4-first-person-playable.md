@@ -47,7 +47,7 @@ OpenSpec (`m4-first-person-playable`, now archived).
 - `ModelViewSynchronizer` now tags each spatial with its `EntityId`
   (`ENTITY_ID_USER_DATA`) so ray hits map back to entities — the single source
   of truth for picking.
-- `OurcraftGame` drops the placeholder cubes and just attaches `MainMenuState`.
+- `OurbreakGame` drops the placeholder cubes and just attaches `MainMenuState`.
 
 ---
 

@@ -1,11 +1,11 @@
 ## Context
 
-M1–M3 produced four headless systems — `RoundSystem`, `VictorySystem`, `NpcBuilderSystem`, `WeaponSystem` — plus `ModelViewState`/`ModelViewSynchronizer` for entity→spatial rendering. They are fully unit-tested but unreachable: `OurcraftGame.simpleInitApp()` only spawns two static cubes and positions a fixed camera. M4 is the wiring milestone that turns this into a playable, completable game using jME's `AppState` machinery and input mapping. No new game logic is introduced; the work is composition, lifecycle, and input plumbing.
+M1–M3 produced four headless systems — `RoundSystem`, `VictorySystem`, `NpcBuilderSystem`, `WeaponSystem` — plus `ModelViewState`/`ModelViewSynchronizer` for entity→spatial rendering. They are fully unit-tested but unreachable: `OurbreakGame.simpleInitApp()` only spawns two static cubes and positions a fixed camera. M4 is the wiring milestone that turns this into a playable, completable game using jME's `AppState` machinery and input mapping. No new game logic is introduced; the work is composition, lifecycle, and input plumbing.
 
 Constraints carried from `design/milestones.md` and `CLAUDE.md`:
 - No new Gradle dependency (Lemur and real UI are deferred to M6; menus use placeholder rendering only).
 - The existing headless JUnit suite must stay green; M4's runtime behavior is validated by a manual smoke test (a full 4-round match to both a win and a loss).
-- Java 21, `com.ourcraft` package root, placeholder cubes acceptable.
+- Java 21, `com.ourbreak` package root, placeholder cubes acceptable.
 
 ## Goals / Non-Goals
 

@@ -78,7 +78,7 @@ n/a — no game code touched this session.
 
 ## Next session
 
-- [ ] Start the actual game scaffold — Gradle project, `com.ourcraft` package, hello-world main class.
+- [ ] Start the actual game scaffold — Gradle project, `com.ourbreak` package, hello-world main class.
 - [ ] Decide rendering stack (LWJGL? libGDX? something else?).
 
 ---

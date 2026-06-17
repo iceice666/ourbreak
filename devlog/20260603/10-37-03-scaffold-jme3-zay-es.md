@@ -24,9 +24,9 @@ Stood up the rendering + ECS stack: jMonkeyEngine 3.9.0-stable for the engine an
 
 ## What I worked on
 
-### Feature / System: `OurcraftGame` entry point
+### Feature / System: `OurbreakGame` entry point
 
-- `SimpleApplication` subclass at `com.ourcraft.OurcraftGame`.
+- `SimpleApplication` subclass at `com.ourbreak.OurbreakGame`.
 - Creates a `DefaultEntityData`, attaches `ModelViewState`, sets a directional + ambient light, and spawns two cube entities.
 - `destroy()` closes the `EntityData` so we don't leak in repeated app starts.
 

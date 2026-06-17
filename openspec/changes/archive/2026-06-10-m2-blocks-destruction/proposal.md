@@ -23,8 +23,8 @@ None.
 
 ## Impact
 
-- Affects ECS components under `app/src/main/java/com/ourcraft/ecs/components/`.
-- Adds a headless `WeaponSystem` under `app/src/main/java/com/ourcraft/ecs/systems/`.
+- Affects ECS components under `app/src/main/java/com/ourbreak/ecs/components/`.
+- Adds a headless `WeaponSystem` under `app/src/main/java/com/ourbreak/ecs/systems/`.
 - Replaces construction sites that use the empty `BlockComponent` stub.
 - Extends the JUnit 5 test suite with `BlockTest` and `WeaponTest`.
 - Adds no dependencies and does not involve jME rendering, physics, input, or raycasting.

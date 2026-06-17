@@ -37,10 +37,10 @@
 
 ## 五、Windows 打包 + 實際在 Windows 跑起來
 
-- `app/build.gradle.kts` 加上**全平台 LWJGL natives**(windows/linux/macos),讓 WSL 建的 `distZip` 能在原生 Windows 跑;distribution 命名為 `ourcraft`(含 `ourcraft.bat`)。
+- `app/build.gradle.kts` 加上**全平台 LWJGL natives**(windows/linux/macos),讓 WSL 建的 `distZip` 能在原生 Windows 跑;distribution 命名為 `ourbreak`(含 `ourbreak.bat`)。
 - 實機啟動排障:
   - 你 Windows 只有 **Java 17**,但遊戲需要 **Java 21** → 下載免安裝的 **Windows JDK 21** 來跑。
-  - 解壓被 Windows「解壓全部」**多包了一層**(`ourcraft\ourcraft\`),修正 classpath。
+  - 解壓被 Windows「解壓全部」**多包了一層**(`ourbreak\ourbreak\`),修正 classpath。
   - 從 WSL **直接執行 Windows 的 java.exe**(互通)啟動,視窗開在桌面、跑在**原生 RTX 5070 OpenGL**(非 WSLg 軟體渲染)。
 
 ## 六、沙灘場景

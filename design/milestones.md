@@ -1,4 +1,4 @@
-# ourcraft — Milestone Breakdown
+# ourbreak — Milestone Breakdown
 
 Derived from `gdd.md` + `tdd.md`. Sequences the TDD's component/system/test list
 into a dependency-ordered, shippable roadmap for a **single final delivery**.
@@ -18,13 +18,13 @@ working game.
 | New deps need approval | Only M6 adds one (Lemur — ask before adding to `libs.versions.toml`) |
 | Test gate | `./gradlew test` must pass before a milestone is "done" |
 | Per-commit devlog | `/commit` skill + pre-commit hooks required on every commit |
-| Package layout | Components → `ecs/components/`; systems/AppStates → `ecs/systems/`; tests → `app/src/test/java/com/ourcraft/` |
+| Package layout | Components → `ecs/components/`; systems/AppStates → `ecs/systems/`; tests → `app/src/test/java/com/ourbreak/` |
 
 ---
 
 ## M0 — Foundation ✅ *done*
 
-**What exists:** jME3 + Zay-ES skeleton, `OurcraftGame`, `PositionComponent`,
+**What exists:** jME3 + Zay-ES skeleton, `OurbreakGame`, `PositionComponent`,
 `ModelComponent`, `ModelViewState`, `EntityDataTest`. Renders placeholder cubes.
 
 **Shippable:** no (engine scaffold only).

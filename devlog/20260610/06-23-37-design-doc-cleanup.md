@@ -9,14 +9,14 @@
 ## Summary
 
 Renamed design files to drop the `v2` suffix and converted the master design
-PDF (`Ourcraft.pdf`) into a standard Markdown document with embedded images.
+PDF (`Ourbreak.pdf`) into a standard Markdown document with embedded images.
 
 ---
 
 ## Goals for this session
 
 - [x] Rename `gddv2.md` → `gdd.md` and `tddv2.md` → `tdd.md`
-- [x] Convert `design/Ourcraft.pdf` to `design/Ourcraft.md`
+- [x] Convert `design/Ourbreak.pdf` to `design/Ourbreak.md`
 - [x] Embed concept art images from `design/img/` into the Markdown
 
 ---
@@ -35,7 +35,7 @@ tables. All five concept-art images from `design/img/` are embedded at the
 relevant sections:
 
 - `democoncept.png` — gameplay screenshot (cover)
-- `ourcraftconcept.png` — full game concept overview
+- `ourbreakconcept.png` — full game concept overview
 - `blockconcept.jpg` — block durability & feature sheet
 - `weaponconcept.jpg` — weapon vs. block counter-play chart
 - `selectchar.jpg` — character select screen (User Widget section)
@@ -51,4 +51,4 @@ relevant sections:
 
 ## Next session
 
-- [ ] Fill in TBD values in `Ourcraft.md` (block counts, damage numbers, effect durations)
+- [ ] Fill in TBD values in `Ourbreak.md` (block counts, damage numbers, effect durations)

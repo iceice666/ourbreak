@@ -1,4 +1,4 @@
-# ourcraft
+# ourbreak
 
 A first-person **beach-siege endless survival** game. You play Openclaw the destroyer:
 each round an NPC builds a 3D wall around its mascot, and you have a limited time to tear
@@ -82,12 +82,12 @@ nix develop          # or: direnv allow (once)
 ```
 
 Runtime is Java 21. The `distZip` bundles every platform's natives, so a build made on
-Linux/WSL also runs on native Windows (`bin/ourcraft.bat`), where mouse-look is a true
+Linux/WSL also runs on native Windows (`bin/ourbreak.bat`), where mouse-look is a true
 captured-cursor FPS.
 
 ## Project layout
 
-- `app/src/main/java/com/ourcraft/` — game code (ECS components + systems / AppStates)
+- `app/src/main/java/com/ourbreak/` — game code (ECS components + systems / AppStates)
 - `design/` — GDD / TDD / milestones
 - `openspec/` — spec-driven design docs (OpenSpec)
 - `devlog/` — per-commit development logs

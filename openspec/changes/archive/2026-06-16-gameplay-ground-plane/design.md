@@ -17,10 +17,10 @@ The gameplay scene renders only the NPC's placeholder block cubes (all cyan, via
 ## Decisions
 
 ### D1 — A dedicated `EnvironmentState`, attached by `GameplayState`
-The ground is a gameplay-scene concern, so a `BaseAppState` builds it on enable and removes it on disable, and `GameplayState` attaches/detaches it alongside `ModelViewState` and `PlayerControlState`. Rationale: matches the existing per-state lifecycle and keeps `GameplayState` from hand-managing raw geometry. Alternative: attach the ground in `OurcraftGame.simpleInitApp` — rejected because it would also show under the menu and persist across matches.
+The ground is a gameplay-scene concern, so a `BaseAppState` builds it on enable and removes it on disable, and `GameplayState` attaches/detaches it alongside `ModelViewState` and `PlayerControlState`. Rationale: matches the existing per-state lifecycle and keeps `GameplayState` from hand-managing raw geometry. Alternative: attach the ground in `OurbreakGame.simpleInitApp` — rejected because it would also show under the menu and persist across matches.
 
 ### D2 — `Quad` floor + `Grid` overlay using existing lights
-A large `Quad` rotated flat at the block base level (y = -0.5, the bottom of the unit blocks) with a lit material gives a solid ground; a `com.jme3.scene.debug.Grid` slightly above it gives line cues for motion. Both reuse the `DirectionalLight`/`AmbientLight` already added in `OurcraftGame`. Rationale: cheapest possible "floor + reference lines" with stock jME shapes, no assets. Alternative: a textured terrain — rejected as M8-scale art.
+A large `Quad` rotated flat at the block base level (y = -0.5, the bottom of the unit blocks) with a lit material gives a solid ground; a `com.jme3.scene.debug.Grid` slightly above it gives line cues for motion. Both reuse the `DirectionalLight`/`AmbientLight` already added in `OurbreakGame`. Rationale: cheapest possible "floor + reference lines" with stock jME shapes, no assets. Alternative: a textured terrain — rejected as M8-scale art.
 
 ## Risks / Trade-offs
 

@@ -19,7 +19,7 @@ The ground now reads as a sunny beach instead of a flat sea-floor plane.
   instead of stretching. The placement grid is kept (it helps read block-cell
   alignment) but recoloured to a faint sand tint at 18% alpha (transparent bucket) so
   it no longer fights the beach look.
-- `OurcraftGame`: sky-blue viewport background and a warm afternoon sun + warm ambient
+- `OurbreakGame`: sky-blue viewport background and a warm afternoon sun + warm ambient
   fill, so the sand looks sunlit rather than lit by a cold cave light.
 
 ## Next session

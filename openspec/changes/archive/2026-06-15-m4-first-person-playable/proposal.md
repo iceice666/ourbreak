@@ -1,6 +1,6 @@
 ## Why
 
-M1–M3 deliver the full game loop — round progression, victory checks, block durability, weapon counter-matrix, and deterministic NPC building — but all of it runs headless. `OurcraftGame` still only spawns two placeholder cubes, so none of the logic is reachable by a player. M4 wires those systems into a runnable jME3 application so the project becomes a completable first-person game: the **first Minimum Shippable Game**.
+M1–M3 deliver the full game loop — round progression, victory checks, block durability, weapon counter-matrix, and deterministic NPC building — but all of it runs headless. `OurbreakGame` still only spawns two placeholder cubes, so none of the logic is reachable by a player. M4 wires those systems into a runnable jME3 application so the project becomes a completable first-person game: the **first Minimum Shippable Game**.
 
 ## What Changes
 
@@ -25,8 +25,8 @@ None. (`model-view-sync` already removes spatials for destroyed entities; `weapo
 
 ## Impact
 
-- Replaces the placeholder body of `OurcraftGame.simpleInitApp()` with attachment of the state machine starting at `MainMenuState`.
-- Adds `MainMenuState`, `GameplayState`, `GameEndState`, and `PlayerControlState` under `app/src/main/java/com/ourcraft/ecs/systems/` (or an `app`/`state` sibling package).
+- Replaces the placeholder body of `OurbreakGame.simpleInitApp()` with attachment of the state machine starting at `MainMenuState`.
+- Adds `MainMenuState`, `GameplayState`, `GameEndState`, and `PlayerControlState` under `app/src/main/java/com/ourbreak/ecs/systems/` (or an `app`/`state` sibling package).
 - Consumes existing `RoundSystem`, `VictorySystem`, `NpcBuilderSystem`, `WeaponSystem`, `ModelViewState`, and the game-state / `MascotComponent` / `PositionComponent` / `WeaponComponent` components without changing their APIs.
 - Adds no new Gradle dependencies (Lemur deferred to M6); relies on jME `BaseAppState`, input, and collision/ray APIs already provided by the `jme3` bundle.
 - Runtime/visual behavior is validated by manual smoke test; the headless JUnit suite remains the automated gate and stays green.

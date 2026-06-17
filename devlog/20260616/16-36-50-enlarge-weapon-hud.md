@@ -21,4 +21,4 @@ Enlarged the weapon readout so the `Weapon: NAME [icon]` is easy to read at a gl
 
 ## Next session
 
-- [ ] Main-menu upgrade: Ourcraft banner art as the title + enlarged buttons.
+- [ ] Main-menu upgrade: Ourbreak banner art as the title + enlarged buttons.

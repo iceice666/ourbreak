@@ -37,7 +37,7 @@ slow into a wall-healing **regrowth** mechanic.
 
 ### WSLg cursor + SFX
 
-- `OurcraftGame`, `MainMenuState`, `GameEndState` force `setCursorVisible(true)` —
+- `OurbreakGame`, `MainMenuState`, `GameEndState` force `setCursorVisible(true)` —
   WSLg hid the OS cursor on window-enter, making the Lemur menu unclickable.
 - Sword slash volume 0.4 → 0.2.
 

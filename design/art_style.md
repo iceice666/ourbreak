@@ -1,6 +1,6 @@
-# Art Style Document — ourcraft
+# Art Style Document — ourbreak
 
-基於 `gdd.md` 的世界觀與角色設定，定義 ourcraft 的視覺語言。
+基於 `gdd.md` 的世界觀與角色設定，定義 ourbreak 的視覺語言。
 
 ---
 
@@ -183,7 +183,7 @@
 
 | 畫面 | 風格 |
 |------|------|
-| 主選單 | 全螢幕沙灘背景（概念圖 `ourcraftconcept.png` 風格），大型 OURCRAFT 標題字，Start Game / Exit 圓角按鈕 |
+| 主選單 | 全螢幕沙灘背景（概念圖 `ourbreakconcept.png` 風格），大型 OURBREAK 標題字，Start Game / Exit 圓角按鈕 |
 | 選角畫面 | Clawd 與 Openclaw 的立繪並排，選中角色有光圈高亮 |
 | 勝利畫面 | 橘金色「YOU WIN!」大字 + Openclaw 歡呼動畫，Restart 按鈕 |
 | 失敗畫面 | 藍灰色「YOU LOSE...」大字 + Openclaw 垂頭動畫，Restart 按鈕 |
@@ -208,7 +208,7 @@
 | 參考 | 位置 |
 |------|------|
 | 場景概念圖 | `design/img/democoncept.png` |
-| 吉祥物概念圖 | `design/img/ourcraftconcept.png` |
+| 吉祥物概念圖 | `design/img/ourbreakconcept.png` |
 | 方塊概念圖 | `design/img/blockconcept.jpg` |
 | 武器概念圖 | `design/img/weaponconcept.jpg` |
 | 角色選擇概念圖 | `design/img/selectchar.jpg` |

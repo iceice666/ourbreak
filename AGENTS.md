@@ -6,7 +6,7 @@ Guidelines for AI coding agents (Claude Code, Codex, Copilot, etc.) working in t
 
 ## Project overview
 
-**ourcraft** is a Java 21 project built with Gradle.  
+**ourbreak** is a Java 21 project built with Gradle.  
 License: MIT — see `LICENSE`.
 
 ---
@@ -47,7 +47,7 @@ Build tool: **Gradle** (wrapper preferred once scaffolded — use `./gradlew`, f
 ## Code conventions
 
 - **Language level**: Java 21 — use modern features (records, sealed classes, pattern matching, text blocks) where they improve clarity.
-- **Package root**: use `com.ourcraft` as the base package.
+- **Package root**: use `com.ourbreak` as the base package.
 - **Formatting**: 4-space indentation, K&R braces, max line length 120.
 - **Naming**: classes `UpperCamelCase`, methods/variables `lowerCamelCase`, constants `UPPER_SNAKE_CASE`.
 - **Null handling**: prefer `Optional<T>` for return values that may be absent; avoid returning raw `null` from public APIs.
@@ -58,15 +58,15 @@ Build tool: **Gradle** (wrapper preferred once scaffolded — use `./gradlew`, f
 ## Repository layout (expected after scaffolding)
 
 ```
-ourcraft/
+ourbreak/
 ├── flake.nix          # Nix dev environment
 ├── flake.lock         # Pinned Nix inputs — commit this
 ├── build.gradle(.kts) # Gradle build script
 ├── settings.gradle    # Project name / subprojects
 ├── gradlew            # Gradle wrapper (commit this)
 ├── src/
-│   ├── main/java/com/ourcraft/   # Production code
-│   └── test/java/com/ourcraft/   # Test code
+│   ├── main/java/com/ourbreak/   # Production code
+│   └── test/java/com/ourbreak/   # Test code
 └── AGENTS.md          # This file
 ```
 

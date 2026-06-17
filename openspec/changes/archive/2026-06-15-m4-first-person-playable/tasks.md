@@ -3,7 +3,7 @@
 - [x] 1.1 Add a `MainMenuState` (`BaseAppState`) that renders placeholder Start Game / Exit prompts on the GUI node and maps keys (Start, Exit)
 - [x] 1.2 Add a `GameEndState` (`BaseAppState`) that takes a WIN/LOSS outcome, renders the corresponding placeholder text, and maps a Restart action
 - [x] 1.3 Wire menu transitions: Start Game detaches `MainMenuState` and attaches `GameplayState`; Exit stops the app; Restart detaches `GameEndState` and attaches `MainMenuState`
-- [x] 1.4 Replace `OurcraftGame.simpleInitApp()` placeholder cube spawning with attaching `MainMenuState` as the initial screen
+- [x] 1.4 Replace `OurbreakGame.simpleInitApp()` placeholder cube spawning with attaching `MainMenuState` as the initial screen
 
 ## 2. Gameplay state and system orchestration
 

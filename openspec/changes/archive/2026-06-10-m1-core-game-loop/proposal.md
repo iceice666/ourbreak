@@ -20,8 +20,8 @@ Every subsequent system (blocks, weapons, NPCs) depends on knowing the current r
 
 ## Impact
 
-- New classes under `app/src/main/java/com/ourcraft/ecs/components/`: `RoundComponent`, `PhaseComponent`
-- New classes under `app/src/main/java/com/ourcraft/ecs/systems/`: `RoundSystem`, `VictorySystem`
-- New test classes under `app/src/test/java/com/ourcraft/`: `RoundSystemTest`, `VictorySystemTest`
+- New classes under `app/src/main/java/com/ourbreak/ecs/components/`: `RoundComponent`, `PhaseComponent`
+- New classes under `app/src/main/java/com/ourbreak/ecs/systems/`: `RoundSystem`, `VictorySystem`
+- New test classes under `app/src/test/java/com/ourbreak/`: `RoundSystemTest`, `VictorySystemTest`
 - `VictorySystemTest` uses a `BlockComponent` stub to tag synthetic block entities (stub also needed by M2, so placed in test sources only for now)
 - No new Gradle dependencies — pure Java 21 + Zay-ES (already present from M0)

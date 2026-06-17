@@ -1,13 +1,13 @@
 ## 1. ECS Components
 
-- [x] 1.1 Create `PhaseComponent` in `app/src/main/java/com/ourcraft/ecs/components/` — enum field `Phase { BUILD, ATTACK }`, implements `EntityComponent`
+- [x] 1.1 Create `PhaseComponent` in `app/src/main/java/com/ourbreak/ecs/components/` — enum field `Phase { BUILD, ATTACK }`, implements `EntityComponent`
 - [x] 1.2 Create `RoundComponent` in `ecs/components/` — fields: `int currentRound`, `int maxRounds`, `double remainingSeconds`, implements `EntityComponent`
 - [x] 1.3 Create `GameResultComponent` in `ecs/components/` — enum field `Result { IN_PROGRESS, WIN, LOSS }`, implements `EntityComponent`
 - [x] 1.4 Create `BlockComponent` stub in `ecs/components/` — no fields, implements `EntityComponent` (M2 will add `blockType`, `durability`, `maxDurability`)
 
 ## 2. RoundSystem
 
-- [x] 2.1 Create `RoundSystem extends AbstractGameSystem` skeleton in `app/src/main/java/com/ourcraft/ecs/systems/`; inject `EntityData` via constructor
+- [x] 2.1 Create `RoundSystem extends AbstractGameSystem` skeleton in `app/src/main/java/com/ourbreak/ecs/systems/`; inject `EntityData` via constructor
 - [x] 2.2 Implement `initialize()` — create singleton game-state entity with `RoundComponent(1, 4, 60.0)`, `PhaseComponent(BUILD)`, `GameResultComponent(IN_PROGRESS)`; store its `EntityId` as a field
 - [x] 2.3 Implement phase transition (e.g. `beginAttackPhase()` public method) — set `PhaseComponent` to ATTACK and `remainingSeconds` to 60.0 on the singleton entity
 - [x] 2.4 Implement `update(float tpf)` — if ATTACK phase: decrement `remainingSeconds` by `tpf`, clamp to `Math.max(0, ...)`
@@ -23,7 +23,7 @@
 
 ## 4. Tests
 
-- [x] 4.1 Create `RoundSystemTest` in `app/src/test/java/com/ourcraft//`; set up an in-memory `EntityData` and a `RoundSystem` instance
+- [x] 4.1 Create `RoundSystemTest` in `app/src/test/java/com/ourbreak//`; set up an in-memory `EntityData` and a `RoundSystem` instance
 - [x] 4.2 Test: initial state — `currentRound=1`, `maxRounds=4`, `phase=BUILD`, `result=IN_PROGRESS`, `remainingSeconds=60.0`
 - [x] 4.3 Test: `beginAttackPhase()` sets `phase=ATTACK` and `remainingSeconds=60.0`
 - [x] 4.4 Test: `update(30.0)` in ATTACK phase decrements `remainingSeconds` to 30.0

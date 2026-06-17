@@ -24,8 +24,8 @@ None.
 
 ## Impact
 
-- Adds `NpcBuilderSystem` under `app/src/main/java/com/ourcraft/ecs/systems/`.
+- Adds `NpcBuilderSystem` under `app/src/main/java/com/ourbreak/ecs/systems/`.
 - Uses the existing `MascotComponent`, `PositionComponent`, `BlockComponent`, `ModelComponent`, and game-state components.
 - Integrates with the existing `RoundSystem.beginAttackPhase()` transition.
-- Adds `NpcBuilderTest` under `app/src/test/java/com/ourcraft/`.
+- Adds `NpcBuilderTest` under `app/src/test/java/com/ourbreak/`.
 - Adds no dependencies and remains independent of jME rendering, physics, pathfinding, and input.

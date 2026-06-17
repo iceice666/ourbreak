@@ -8,7 +8,7 @@
 
 ## Summary
 
-Created `design/art_style.md`, the first dedicated art style document for ourcraft. Covers visual direction, color system, character art specs, block/weapon art, environment, VFX, UI/HUD, and lighting.
+Created `design/art_style.md`, the first dedicated art style document for ourbreak. Covers visual direction, color system, character art specs, block/weapon art, environment, VFX, UI/HUD, and lighting.
 
 ---
 

@@ -1,5 +1,5 @@
 {
-  description = "ourcraft — Java 21 + Gradle dev environment";
+  description = "ourbreak — Java 21 + Gradle dev environment";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,7 +14,7 @@
       in
       {
         devShells.default = pkgs.mkShell {
-          name = "ourcraft";
+          name = "ourbreak";
 
           packages = with pkgs; [
             jdk

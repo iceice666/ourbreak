@@ -20,7 +20,7 @@ to a small OGG.
 
 - `AudioState` (`BaseAppState`) loads `Sound/blockside-drizzle.wav` as a
   streaming, looping, non-positional `AudioNode` and plays it for the whole
-  session; attached in `OurcraftGame.simpleInitApp`.
+  session; attached in `OurbreakGame.simpleInitApp`.
 - Loads tolerantly — if the asset is missing it logs and runs silently rather
   than crashing, so a clone without the (gitignored) WAV still builds and runs.
 

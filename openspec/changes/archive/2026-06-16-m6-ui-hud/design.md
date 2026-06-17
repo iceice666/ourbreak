@@ -18,7 +18,7 @@ M4 stood up the AppState machine with placeholder `BitmapText` menus and no HUD;
 ## Decisions
 
 ### D1 — Lemur with `GuiGlobals` initialized once, pure-Java styling
-`OurcraftGame.simpleInitApp` calls `GuiGlobals.initialize(this)` before any state is attached. We do **not** call `BaseStyles.loadGlassStyle()` (that needs Groovy); elements use Lemur's built-in default style, set/tweaked via the Java `Styles`/attribute API where needed. Rationale: clickable, readable widgets with zero Groovy footprint. Alternative: load the glass style — rejected (pulls Groovy for cosmetics we don't need yet).
+`OurbreakGame.simpleInitApp` calls `GuiGlobals.initialize(this)` before any state is attached. We do **not** call `BaseStyles.loadGlassStyle()` (that needs Groovy); elements use Lemur's built-in default style, set/tweaked via the Java `Styles`/attribute API where needed. Rationale: clickable, readable widgets with zero Groovy footprint. Alternative: load the glass style — rejected (pulls Groovy for cosmetics we don't need yet).
 
 ### D2 — `HudState` reads ECS, `HudText` formats (testable seam)
 `HudState` (a `BaseAppState` attached by `GameplayState`) holds Lemur `Label`s on the GUI node. Each frame it reads `RoundComponent` + `PhaseComponent` from the game-state entity and counts `BlockComponent` entities via an `EntitySet` (released on cleanup), then sets label text from a pure `HudText` helper and toggles the ATTACK-only labels' visibility. Rationale: all string/threshold logic lives in `HudText` (no jME), so it is unit-tested; the state is a thin view. Alternative: format inline in the state — rejected (untestable).

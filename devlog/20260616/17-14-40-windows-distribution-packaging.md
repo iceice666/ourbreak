@@ -24,19 +24,19 @@ WSL/Linux.
   (`natives-windows` / `-linux` / `-macos` / `-macos-arm64`) across the modules jME
   loads (`lwjgl`, `lwjgl-glfw`, `lwjgl-jemalloc`, `lwjgl-openal`, `lwjgl-opengl`),
   pinned to LWJGL 3.3.6 (the version jME 3.9 resolves).
-- Set `applicationName = "ourcraft"` so the distribution and start scripts are named
-  `ourcraft` / `ourcraft.bat` instead of `app`.
+- Set `applicationName = "ourbreak"` so the distribution and start scripts are named
+  `ourbreak` / `ourbreak.bat` instead of `app`.
 
 ### Result
 
-- `./gradlew :app:distZip` → `app/build/distributions/ourcraft.zip` (~58 MB) with
-  `bin/ourcraft.bat` (Windows) + `bin/ourcraft` (sh) and all platforms' natives in
+- `./gradlew :app:distZip` → `app/build/distributions/ourbreak.zip` (~58 MB) with
+  `bin/ourbreak.bat` (Windows) + `bin/ourbreak` (sh) and all platforms' natives in
   `lib/`. Resources (textures/sounds/icons) ship inside `app.jar`.
 
 ## How to run on Windows
 
 - Needs a Java 21 runtime on the Windows side (`JAVA_HOME` or `java` on PATH).
-- Unzip `ourcraft.zip`, run `bin\ourcraft.bat`. The platform check picks the native
+- Unzip `ourbreak.zip`, run `bin\ourbreak.bat`. The platform check picks the native
   captured-cursor FPS look automatically (no WSLg workaround).
 
 ## Next session

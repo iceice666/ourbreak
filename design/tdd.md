@@ -1,4 +1,4 @@
-# Technical Design Document — ourcraft
+# Technical Design Document — ourbreak
 
 基於 `gdd.md`，描述如何用 JMonkeyEngine 3.9.0 + Zay-ES 1.6.0 實作遊戲。
 

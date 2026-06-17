@@ -1,7 +1,7 @@
 ## 1. Dependency & Lemur bootstrap
 
 - [x] 1.1 Add `com.simsilica:lemur:1.16.0` to `gradle/libs.versions.toml` and `app/build.gradle.kts`
-- [x] 1.2 Initialize `GuiGlobals.initialize(this)` in `OurcraftGame.simpleInitApp` (no glass/Groovy style)
+- [x] 1.2 Initialize `GuiGlobals.initialize(this)` in `OurbreakGame.simpleInitApp` (no glass/Groovy style)
 
 ## 2. HUD
 

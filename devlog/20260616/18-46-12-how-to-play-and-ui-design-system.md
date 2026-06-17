@@ -30,14 +30,14 @@ Added a How to Play screen and gave the whole UI a consistent, legible design sy
   highlight, coral red is reserved for game-over / urgency. Hierarchy by fill:
   gold-filled primary, dark+gold secondary, near-invisible subtle; uniform sizing,
   centred text, and a hover-brighten affordance.
-- **Main menu**: full-screen scrim + card, "OURCRAFT" gold wordmark + tagline, three
+- **Main menu**: full-screen scrim + card, "OURBREAK" gold wordmark + tagline, three
   tiered buttons.
 - **Game over**: scrim + card, GAME OVER in coral, the round reached shown as a big 72px
   gold score, Restart primary + Enter/Esc hint.
 - **HUD**: dark "pill" backings behind every label so it's legible over the bright beach;
   round/weapon in gold, remaining-buildings in aqua, and the countdown turns coral-red in
   the final 10 seconds (urgency). Countdown/buildings attach only during ATTACK.
-- `OurcraftGame`: hide jME's debug stat/FPS HUD (it overlapped menus and isn't for
+- `OurbreakGame`: hide jME's debug stat/FPS HUD (it overlapped menus and isn't for
   players).
 
 ## Next session

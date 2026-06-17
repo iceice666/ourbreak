@@ -38,4 +38,4 @@ The HUD weapon readout now shows the equipped weapon's **icon** after the name â
 ## Next session
 
 - [ ] Optional: a drone v3 (cropped) to match sword/gun; currently drone uses v2.
-- [ ] Main-menu upgrade: wire the Ourcraft banner art as the title + enlarge buttons.
+- [ ] Main-menu upgrade: wire the Ourbreak banner art as the title + enlarge buttons.

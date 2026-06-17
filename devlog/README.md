@@ -1,6 +1,6 @@
 # Devlog
 
-Development log for the ourcraft game project. Each entry captures what was built, decided, or learned during a session.
+Development log for the ourbreak game project. Each entry captures what was built, decided, or learned during a session.
 
 ## Structure
 
