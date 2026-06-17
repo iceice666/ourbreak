@@ -60,30 +60,37 @@ public class ModelViewState extends BaseAppState {
 
     private Spatial createSpatial(ModelComponent model) {
         Geometry geom = new Geometry(model.modelId(), new Box(0.5f, 0.5f, 0.5f));
+        Material mat = blockMaterial(assetManager, model.modelId());
+        geom.setMaterial(mat);
+        // Record the base Diffuse so hit-flash / poison can restore it (White for textured blocks).
+        geom.setUserData(BASE_DIFFUSE_USER_DATA, ((ColorRGBA) mat.getParam("Diffuse").getValue()).clone());
+        return geom;
+    }
+
+    /**
+     * The Lighting material for a block model id, shared by the live blocks and the destruction debris.
+     * Prefers the per-type seamless texture (Textures/&lt;type&gt;.png); falls back to a flat per-type
+     * colour when no texture ships. With UseMaterialColors + a DiffuseMap, a White Diffuse base shows the
+     * texture at true colour while hit-flash / poison can still tint by overwriting the Diffuse colour.
+     */
+    public static Material blockMaterial(AssetManager assetManager, String modelId) {
         Material mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
         mat.setBoolean("UseMaterialColors", true);
-
-        // Prefer a per-type seamless texture (Textures/<type>.png); fall back to a flat per-type
-        // colour when no texture ships for that block. With UseMaterialColors + a DiffuseMap, the
-        // Lighting shader multiplies the map by the Diffuse colour, so a White base shows the texture
-        // at true colour while hit-flash / poison can still tint by overwriting the Diffuse colour.
-        Texture texture = loadBlockTexture(model.modelId());
+        Texture texture = loadBlockTexture(assetManager, modelId);
         ColorRGBA base;
         if (texture != null) {
             texture.setWrap(Texture.WrapMode.Repeat);
             mat.setTexture("DiffuseMap", texture);
             base = ColorRGBA.White.clone();
         } else {
-            base = colorFor(model.modelId());
+            base = colorFor(modelId);
         }
         mat.setColor("Diffuse", base);
         mat.setColor("Ambient", base);
-        geom.setMaterial(mat);
-        geom.setUserData(BASE_DIFFUSE_USER_DATA, base);
-        return geom;
+        return mat;
     }
 
-    private Texture loadBlockTexture(String modelId) {
+    private static Texture loadBlockTexture(AssetManager assetManager, String modelId) {
         String type = modelId.endsWith("-block")
                 ? modelId.substring(0, modelId.length() - "-block".length())
                 : modelId;

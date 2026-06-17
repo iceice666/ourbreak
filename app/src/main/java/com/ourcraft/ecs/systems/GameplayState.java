@@ -27,6 +27,7 @@ public class GameplayState extends BaseAppState {
     private EnvironmentState environment;
     private MascotState mascot;
     private HitFeedbackState hitFeedback;
+    private DestructionFxState destructionFx;
     private PoisonState poison;
     private RoundSystem roundSystem;
     private VictorySystem victorySystem;
@@ -52,6 +53,9 @@ public class GameplayState extends BaseAppState {
 
         hitFeedback = new HitFeedbackState(ed);
         getStateManager().attach(hitFeedback);
+
+        destructionFx = new DestructionFxState(ed);
+        getStateManager().attach(destructionFx);
 
         roundSystem = new RoundSystem(ed);
         roundSystem.initialize();
@@ -91,6 +95,7 @@ public class GameplayState extends BaseAppState {
         getStateManager().detach(hud);
         getStateManager().detach(playerControl);
         getStateManager().detach(poison);
+        getStateManager().detach(destructionFx);
         getStateManager().detach(hitFeedback);
         getStateManager().detach(mascot);
         getStateManager().detach(environment);
