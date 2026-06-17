@@ -357,10 +357,21 @@ public class PlayerControlState extends BaseAppState {
             case SWORD -> blockEffect.rowTargets(target, swordSweepAlongX());
             case GUN -> List.of(target);
         };
+        // Capture the blast centre before the block is destroyed, for the drone explosion FX.
+        PositionComponent centre = weaponType == WeaponType.DRONE
+                ? ed.getComponent(target, PositionComponent.class) : null;
+
         // WeaponSystem gates on the ATTACK phase and applies the counter-matrix and durability;
         // destroyed entities are removed by the model-view synchronizer.
         weaponSystem.attack(playerId, targets);
         playWeaponSound(weaponType);
+
+        if (centre != null) {
+            DestructionFxState fx = getStateManager().getState(DestructionFxState.class);
+            if (fx != null) {
+                fx.explosion(new com.jme3.math.Vector3f(centre.x(), centre.y(), centre.z()));
+            }
+        }
     }
 
     /** The sword sweeps left-to-right across the view: along X when facing mostly ±Z, else along Z. */

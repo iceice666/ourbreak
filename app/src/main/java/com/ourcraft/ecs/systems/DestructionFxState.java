@@ -4,6 +4,7 @@ import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.asset.AssetManager;
+import com.jme3.light.PointLight;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
@@ -14,6 +15,7 @@ import com.jme3.scene.Mesh;
 import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
+import com.jme3.scene.shape.Torus;
 import com.ourcraft.ecs.components.BlockComponent;
 import com.ourcraft.ecs.components.ModelComponent;
 import com.ourcraft.ecs.components.PositionComponent;
@@ -56,11 +58,14 @@ public class DestructionFxState extends BaseAppState {
 
     private final Mesh cubeMesh = new Box(0.5f, 0.5f, 0.5f);
     private final Mesh dustMesh = new Sphere(8, 8, 0.5f);
+    private final Mesh ringMesh = new Torus(28, 10, 0.05f, 0.5f);
 
     private final Map<EntityId, BlockInfo> tracked = new HashMap<>();
     private final Map<String, Material> debrisMaterials = new HashMap<>();
     private final List<Debris> debris = new ArrayList<>();
     private final List<Dust> dust = new ArrayList<>();
+    private final List<Puff> puffs = new ArrayList<>();
+    private final List<FxLight> lights = new ArrayList<>();
 
     public DestructionFxState(EntityData ed) {
         this.ed = Objects.requireNonNull(ed, "ed");
@@ -89,6 +94,11 @@ public class DestructionFxState extends BaseAppState {
         fxNode.detachAllChildren();
         debris.clear();
         dust.clear();
+        puffs.clear();
+        for (FxLight l : lights) {
+            sceneRoot.removeLight(l.light);
+        }
+        lights.clear();
         fxNode.removeFromParent();
     }
 
@@ -111,6 +121,8 @@ public class DestructionFxState extends BaseAppState {
 
         animateDebris(tpf);
         animateDust(tpf);
+        animatePuffs(tpf);
+        animateLights(tpf);
     }
 
     private void burst(BlockInfo info) {
@@ -201,6 +213,93 @@ public class DestructionFxState extends BaseAppState {
         return debrisMaterials.computeIfAbsent(modelId, id -> ModelViewState.blockMaterial(assetManager, id));
     }
 
+    /**
+     * A drone blast at a world position: a white core flash, an orange fireball, rising smoke, an
+     * expanding ground shockwave ring, and a brief orange point light. (The 3×3 of blocks it destroys
+     * already throw their own textured debris.)
+     */
+    public void explosion(Vector3f center) {
+        // core flash + fireball (additive glow)
+        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.97f, 0.85f, 1f), 0.95f, 0.6f, 1.7f, 0f, 0.14f, true, false);
+        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.55f, 0.18f, 1f), 0.95f, 0.5f, 2.7f, 0.6f, 0.40f, true, false);
+        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.82f, 0.35f, 1f), 0.9f, 0.3f, 1.7f, 0.5f, 0.30f, true, false);
+
+        // rising smoke (alpha)
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
+        for (int i = 0; i < 5; i++) {
+            Vector3f p = new Vector3f(
+                    center.x + rng.nextFloat(-0.4f, 0.4f),
+                    center.y + rng.nextFloat(-0.2f, 0.3f),
+                    center.z + rng.nextFloat(-0.4f, 0.4f));
+            spawnPuff(dustMesh, p, new ColorRGBA(0.17f, 0.16f, 0.15f, 1f), 0.7f, 0.5f, 2.0f, 1.4f, 0.85f, false, false);
+        }
+
+        // ground shockwave ring (additive)
+        Vector3f ringPos = new Vector3f(center.x, GROUND_Y + 0.06f, center.z);
+        spawnPuff(ringMesh, ringPos, new ColorRGBA(1f, 0.78f, 0.4f, 1f), 0.85f, 0.4f, 3.2f, 0f, 0.42f, true, true);
+
+        // brief light
+        PointLight pl = new PointLight();
+        pl.setRadius(9f);
+        pl.setPosition(center);
+        sceneRoot.addLight(pl);
+        lights.add(new FxLight(pl, 0.22f, new ColorRGBA(1f, 0.6f, 0.25f, 1f), 7f));
+    }
+
+    private void spawnPuff(Mesh mesh, Vector3f pos, ColorRGBA rgb, float startAlpha,
+                           float startScale, float endScale, float rise, float life,
+                           boolean additive, boolean flatRing) {
+        Material m = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        m.setColor("Color", new ColorRGBA(rgb.r, rgb.g, rgb.b, startAlpha));
+        m.getAdditionalRenderState().setBlendMode(
+                additive ? RenderState.BlendMode.AlphaAdditive : RenderState.BlendMode.Alpha);
+        m.getAdditionalRenderState().setDepthWrite(false);
+        Geometry g = new Geometry("fx-puff", mesh);
+        g.setMaterial(m);
+        g.setQueueBucket(com.jme3.renderer.queue.RenderQueue.Bucket.Transparent);
+        if (flatRing) {
+            g.rotate(-FastMath.HALF_PI, 0f, 0f); // lay the ring flat on the ground
+        }
+        g.setLocalTranslation(pos);
+        g.setLocalScale(startScale);
+        fxNode.attachChild(g);
+        puffs.add(new Puff(g, m, pos.clone(), rgb, startAlpha, startScale, endScale, rise, life));
+    }
+
+    private void animatePuffs(float tpf) {
+        for (Iterator<Puff> it = puffs.iterator(); it.hasNext(); ) {
+            Puff p = it.next();
+            p.life -= tpf;
+            if (p.life <= 0f) {
+                p.geom.removeFromParent();
+                it.remove();
+                continue;
+            }
+            float t = 1f - p.life / p.maxLife;           // 0 → 1
+            p.geom.setLocalScale(p.startScale + (p.endScale - p.startScale) * t);
+            if (p.rise != 0f) {
+                p.pos.y += p.rise * tpf;
+                p.geom.setLocalTranslation(p.pos);
+            }
+            float alpha = p.startAlpha * (1f - t);
+            p.material.setColor("Color", new ColorRGBA(p.rgb.r, p.rgb.g, p.rgb.b, alpha));
+        }
+    }
+
+    private void animateLights(float tpf) {
+        for (Iterator<FxLight> it = lights.iterator(); it.hasNext(); ) {
+            FxLight l = it.next();
+            l.life -= tpf;
+            if (l.life <= 0f) {
+                sceneRoot.removeLight(l.light);
+                it.remove();
+                continue;
+            }
+            float k = (l.life / l.maxLife) * l.intensity; // fade the brightness out
+            l.light.setColor(l.color.mult(k));
+        }
+    }
+
     private record BlockInfo(float x, float y, float z, String modelId) {
     }
 
@@ -233,6 +332,50 @@ public class DestructionFxState extends BaseAppState {
             this.material = material;
             this.life = life;
             this.maxScale = maxScale;
+        }
+    }
+
+    /** A generic expanding / rising / fading explosion sprite (flash, fireball, smoke, shockwave ring). */
+    private static final class Puff {
+        final Geometry geom;
+        final Material material;
+        final Vector3f pos;
+        final ColorRGBA rgb;
+        final float startAlpha;
+        final float startScale;
+        final float endScale;
+        final float rise;
+        final float maxLife;
+        float life;
+
+        Puff(Geometry geom, Material material, Vector3f pos, ColorRGBA rgb, float startAlpha,
+             float startScale, float endScale, float rise, float life) {
+            this.geom = geom;
+            this.material = material;
+            this.pos = pos;
+            this.rgb = rgb;
+            this.startAlpha = startAlpha;
+            this.startScale = startScale;
+            this.endScale = endScale;
+            this.rise = rise;
+            this.maxLife = life;
+            this.life = life;
+        }
+    }
+
+    private static final class FxLight {
+        final PointLight light;
+        final ColorRGBA color;
+        final float intensity;
+        final float maxLife;
+        float life;
+
+        FxLight(PointLight light, float life, ColorRGBA color, float intensity) {
+            this.light = light;
+            this.color = color;
+            this.intensity = intensity;
+            this.maxLife = life;
+            this.life = life;
         }
     }
 }
