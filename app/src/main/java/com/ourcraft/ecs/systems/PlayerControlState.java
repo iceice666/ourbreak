@@ -395,14 +395,15 @@ public class PlayerControlState extends BaseAppState {
         CollisionResults results = new CollisionResults();
         rootNode.collideWith(ray, results);
 
-        CollisionResult hit = results.getClosestCollision();
-        if (hit == null) {
-            return null;
-        }
-        for (Spatial s = hit.getGeometry(); s != null; s = s.getParent()) {
-            Long rawId = s.getUserData(ModelViewSynchronizer.ENTITY_ID_USER_DATA);
-            if (rawId != null) {
-                return new EntityId(rawId);
+        // Nearest-first: return the first collision that resolves to a block entity, skipping non-block
+        // hits (explosion FX, flying debris, the ground, the mascot). Otherwise transient FX in front of
+        // the wall would intercept the pick for ~1s after a blast and block re-targeting that spot.
+        for (CollisionResult hit : results) {
+            for (Spatial s = hit.getGeometry(); s != null; s = s.getParent()) {
+                Long rawId = s.getUserData(ModelViewSynchronizer.ENTITY_ID_USER_DATA);
+                if (rawId != null) {
+                    return new EntityId(rawId);
+                }
             }
         }
         return null;
