@@ -116,6 +116,22 @@ class BlockEffectTest {
         assertEquals(List.of(center), system.droneAreaTargets(center));
     }
 
+    @Test
+    void droneRadiusExpandsToTheFullSquare() {
+        EntityId center = null;
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                EntityId id = createBlock(SAND, dx, dz);
+                if (dx == 0 && dz == 0) {
+                    center = id;
+                }
+            }
+        }
+        // radius 2 = a 5×5 square = 25 cells (Lv2 drone); radius 1 still only the inner 3×3 = 9.
+        assertEquals(25, system.droneAreaTargets(center, 2).size());
+        assertEquals(9, system.droneAreaTargets(center, 1).size());
+    }
+
     // ── Sword row expansion ──────────────────────────────────────────────────
 
     @Test

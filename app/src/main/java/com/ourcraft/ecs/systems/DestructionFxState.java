@@ -219,28 +219,35 @@ public class DestructionFxState extends BaseAppState {
      * already throw their own textured debris.)
      */
     public void explosion(Vector3f center) {
+        explosion(center, 1);
+    }
+
+    /** Explosion sized to the drone blast radius (Lv1 ≈ 3×3 → s=1; larger levels scale the FX up). */
+    public void explosion(Vector3f center, int blastRadius) {
+        float s = (2 * Math.max(1, blastRadius) + 1) / 3f; // diameter in cells / 3 → 1 at Lv1
+
         // core flash + fireball (additive glow)
-        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.97f, 0.85f, 1f), 0.95f, 0.6f, 1.7f, 0f, 0.14f, true, false);
-        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.55f, 0.18f, 1f), 0.95f, 0.5f, 2.7f, 0.6f, 0.40f, true, false);
-        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.82f, 0.35f, 1f), 0.9f, 0.3f, 1.7f, 0.5f, 0.30f, true, false);
+        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.97f, 0.85f, 1f), 0.95f, 0.6f * s, 1.7f * s, 0f, 0.14f, true, false);
+        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.55f, 0.18f, 1f), 0.95f, 0.5f * s, 2.7f * s, 0.6f, 0.40f, true, false);
+        spawnPuff(dustMesh, center, new ColorRGBA(1f, 0.82f, 0.35f, 1f), 0.9f, 0.3f * s, 1.7f * s, 0.5f, 0.30f, true, false);
 
         // rising smoke (alpha)
         ThreadLocalRandom rng = ThreadLocalRandom.current();
         for (int i = 0; i < 5; i++) {
             Vector3f p = new Vector3f(
-                    center.x + rng.nextFloat(-0.4f, 0.4f),
+                    center.x + rng.nextFloat(-0.4f, 0.4f) * s,
                     center.y + rng.nextFloat(-0.2f, 0.3f),
-                    center.z + rng.nextFloat(-0.4f, 0.4f));
-            spawnPuff(dustMesh, p, new ColorRGBA(0.17f, 0.16f, 0.15f, 1f), 0.7f, 0.5f, 2.0f, 1.4f, 0.85f, false, false);
+                    center.z + rng.nextFloat(-0.4f, 0.4f) * s);
+            spawnPuff(dustMesh, p, new ColorRGBA(0.17f, 0.16f, 0.15f, 1f), 0.7f, 0.5f * s, 2.0f * s, 1.4f, 0.85f, false, false);
         }
 
         // ground shockwave ring (additive)
         Vector3f ringPos = new Vector3f(center.x, GROUND_Y + 0.06f, center.z);
-        spawnPuff(ringMesh, ringPos, new ColorRGBA(1f, 0.78f, 0.4f, 1f), 0.85f, 0.4f, 3.2f, 0f, 0.42f, true, true);
+        spawnPuff(ringMesh, ringPos, new ColorRGBA(1f, 0.78f, 0.4f, 1f), 0.85f, 0.4f * s, 3.2f * s, 0f, 0.42f, true, true);
 
         // brief light
         PointLight pl = new PointLight();
-        pl.setRadius(9f);
+        pl.setRadius(9f * s);
         pl.setPosition(center);
         sceneRoot.addLight(pl);
         lights.add(new FxLight(pl, 0.22f, new ColorRGBA(1f, 0.6f, 0.25f, 1f), 7f));

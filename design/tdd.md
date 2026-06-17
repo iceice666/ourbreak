@@ -104,7 +104,7 @@ MainMenuState
 |------|----------|------|
 | SWORD | 近戰橫掃 | 準星 raycast 取中心方塊，再經 `BlockEffectSystem.rowTargets` 沿視角橫向 ±1 格展成 3 格，每格各算一次命中 |
 | GUN | 遠距單體 | 長距 raycast（20 格），命中第一個方塊 |
-| DRONE | 範圍轟炸 | 對準星所在方塊為中心，立即對 3×3 範圍造成傷害（`BlockEffectSystem.droneAreaTargets`，**無獨立俯視操控模式**）|
+| DRONE | 範圍轟炸 | 對準星方塊為中心，立即對 `(2·Lv+1)²` 方陣造成傷害（`droneAreaTargets(center, radius)`）。**等級隨難度升級**：`WeaponSystem.droneLevelForRound(round) = 1+(round−1)/3`（每 3 回合 +1、無上限）→ 3×3→5×5→7×7…，爆炸特效與 HUD `Lv.N` 同步。無獨立俯視操控模式 |
 
 ### 武器剋制關係（影響 `WeaponSystem` 傷害倍數）
 
@@ -204,3 +204,4 @@ NPC 為純固定腳本，不使用 pathfinding。
 | `VictorySystemTest` | 方塊清空 → 進下一回合（存活）、計時器歸零仍有方塊 → Game Over（任一回合）|
 | `NpcBuilderTest` | 各 round 放置正確方塊種類 |
 | `DifficultyCurveTest` | 無限難度曲線：教學斜坡 + R5 接續 48、方塊永遠遞增、增量不暴衝、要求速率 < 漸近上限 |
+| `DroneLevelTest` | 無人機等級每 3 回合 +1、無上限、單調遞增；`droneAreaTargets` 半徑展開（5×5/3×3）|
