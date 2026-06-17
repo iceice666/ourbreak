@@ -1,6 +1,7 @@
 package com.ourcraft;
 
 import com.ourcraft.ecs.components.BlockComponent;
+import com.ourcraft.ecs.components.BlockComponent.BlockType;
 import com.ourcraft.ecs.components.GameResultComponent;
 import com.ourcraft.ecs.components.MascotComponent;
 import com.ourcraft.ecs.components.ModelComponent;
@@ -24,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.ourcraft.ecs.components.BlockComponent.BlockType.CORAL;
@@ -38,7 +40,6 @@ import static com.ourcraft.ecs.components.PhaseComponent.Phase.BUILD;
 import static com.ourcraft.ecs.systems.NpcBuilderSystem.blocksForRound;
 import static com.ourcraft.ecs.systems.RoundSystem.ATTACK_DURATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -100,101 +101,40 @@ class NpcBuilderTest {
     }
 
     @Test
-    void firstRingUsesDeterministicFrontSideAndRearOrder() {
-        placeFirstRing();
-
-        assertIterableEquals(List.of(
-                new PositionComponent(0.0f, 0.0f, 1.0f),
-                new PositionComponent(-1.0f, 0.0f, 0.0f),
-                new PositionComponent(1.0f, 0.0f, 0.0f),
-                new PositionComponent(-1.0f, 0.0f, 1.0f),
-                new PositionComponent(1.0f, 0.0f, 1.0f),
-                new PositionComponent(-1.0f, 0.0f, -1.0f),
-                new PositionComponent(1.0f, 0.0f, -1.0f),
-                new PositionComponent(0.0f, 0.0f, -1.0f)
-        ), placedBlocks().stream().map(PlacedBlock::position).toList());
+    void eachRoundPlacesOnlyTypesFromItsPalette() {
+        // The village draws block types from the round's palette, so the type progression (and the
+        // counter-matrix) is preserved even though exact placement is now procedural.
+        assertTypesWithin(Set.of(SAND));
+        advanceToNextBuild();
+        assertTypesWithin(Set.of(SAND, CORAL));
+        advanceToNextBuild();
+        assertTypesWithin(Set.of(ROCK, SHELL));
+        advanceToNextBuild();
+        assertTypesWithin(Set.of(ROCK, JELLYFISH));
+        advanceToNextBuild();
+        assertTypesWithin(Set.of(ROCK, SHELL, JELLYFISH, CORAL)); // round 5+: the full gauntlet
     }
 
     @Test
-    void positionsAreTranslatedFromMascotAndPreserveItsHeight() {
+    void villageBuildsAroundTheMascotAboveItsBase() {
         ed.setComponent(mascotId, new PositionComponent(10.0f, 3.0f, -4.0f));
-
-        placeFirstRing();
-
-        assertIterableEquals(List.of(
-                new PositionComponent(10.0f, 3.0f, -3.0f),
-                new PositionComponent(9.0f, 3.0f, -4.0f),
-                new PositionComponent(11.0f, 3.0f, -4.0f),
-                new PositionComponent(9.0f, 3.0f, -3.0f),
-                new PositionComponent(11.0f, 3.0f, -3.0f),
-                new PositionComponent(9.0f, 3.0f, -5.0f),
-                new PositionComponent(11.0f, 3.0f, -5.0f),
-                new PositionComponent(10.0f, 3.0f, -5.0f)
-        ), placedBlocks().stream().map(PlacedBlock::position).toList());
-    }
-
-    @Test
-    void eachRoundUsesItsOrderedRepeatingBlockScript() {
-        assertRoundTypes(SAND);
-        advanceToNextBuild();
-        assertRoundTypes(SAND, CORAL);
-        advanceToNextBuild();
-        assertRoundTypes(ROCK, SHELL);
-        advanceToNextBuild();
-        assertRoundTypes(ROCK, JELLYFISH);
-        advanceToNextBuild();
-        assertRoundTypes(ROCK, SHELL, JELLYFISH, CORAL); // round 5+: the full gauntlet
-    }
-
-    @Test
-    void occupiedPriorityPositionIsSkipped() {
-        createBlock(SHELL, new PositionComponent(0.0f, 0.0f, 1.0f));
-
-        builder.update(0.0f);
-
-        assertEquals(
-                new PositionComponent(-1.0f, 0.0f, 0.0f),
-                placedBlocks().get(1).position());
-    }
-
-    @Test
-    void fullyOccupiedFirstRingGroundLayerStacksUpward() {
-        List<PositionComponent> firstRingGround = List.of(
-                new PositionComponent(0.0f, 0.0f, 1.0f),
-                new PositionComponent(-1.0f, 0.0f, 0.0f),
-                new PositionComponent(1.0f, 0.0f, 0.0f),
-                new PositionComponent(-1.0f, 0.0f, 1.0f),
-                new PositionComponent(1.0f, 0.0f, 1.0f),
-                new PositionComponent(-1.0f, 0.0f, -1.0f),
-                new PositionComponent(1.0f, 0.0f, -1.0f),
-                new PositionComponent(0.0f, 0.0f, -1.0f));
-        firstRingGround.forEach(position -> createBlock(SHELL, position));
-
-        builder.update(0.0f);
-
-        // 3D wall: with the first ring's ground layer full, the next block stacks up to front-centre y=1.
-        assertEquals(SAND, blockAt(new PositionComponent(0.0f, 1.0f, 1.0f)).block().blockType());
-    }
-
-    @Test
-    void destroyedPriorityPositionIsRefilledFirstInLaterRound() {
         completeBuild();
-        PositionComponent front = new PositionComponent(0.0f, 0.0f, 1.0f);
-        ed.removeEntity(blockAt(front).id());
-        advanceToNextBuild();
 
-        builder.update(0.0f);
-
-        PlacedBlock newest = placedBlocks().getLast();
-        assertEquals(front, newest.position());
-        assertEquals(SAND, newest.block().blockType());
+        for (PlacedBlock placed : placedBlocks()) {
+            PositionComponent p = placed.position();
+            // Houses sit on or above the mascot's base height, and clear of the central crab plaza.
+            assertTrue(p.y() >= 3.0f, () -> "block below mascot base: " + p);
+            float dx = p.x() - 10.0f;
+            float dz = p.z() - (-4.0f);
+            assertTrue(Math.abs(dx) > 0.5f || Math.abs(dz) > 0.5f, () -> "block on the mascot cell: " + p);
+        }
     }
 
     @Test
     void survivorsRemainUnchangedWhileLaterRoundsAddBlocks() {
         completeBuild();
-        PlacedBlock front = blockAt(new PositionComponent(0.0f, 0.0f, 1.0f));
-        ed.setComponent(front.id(), front.block().applyDamage(0.5f));
+        PlacedBlock damaged = placedBlocks().get(0);
+        ed.setComponent(damaged.id(), damaged.block().applyDamage(0.5f));
         List<PlacedBlock> survivors = placedBlocks();
 
         for (int round = 2; round <= 4; round++) {
@@ -274,11 +214,13 @@ class NpcBuilderTest {
         }
     }
 
-    /** Places exactly the first ring (8 cells) for placement-order assertions. */
-    private void placeFirstRing() {
-        for (int i = 0; i < 8; i++) {
-            builder.update(0.0f);
-        }
+    private void assertTypesWithin(Set<BlockType> palette) {
+        int firstNewBlock = placedBlocks().size();
+        completeBuild();
+        placedBlocks().stream()
+                .skip(firstNewBlock)
+                .forEach(placed -> assertTrue(palette.contains(placed.block().blockType()),
+                        () -> placed.block().blockType() + " is not in the round palette " + palette));
     }
 
     private static Stream<Class<? extends EntityComponent>> requiredGameStateComponentTypes() {
@@ -297,42 +239,9 @@ class NpcBuilderTest {
         }
     }
 
-    private void assertRoundTypes(BlockComponent.BlockType... script) {
-        int firstNewBlock = placedBlocks().size();
-        int quota = blocksForRound(round().currentRound());
-
-        completeBuild();
-
-        List<BlockComponent.BlockType> placedTypes = placedBlocks().stream()
-                .skip(firstNewBlock)
-                .map(placed -> placed.block().blockType())
-                .toList();
-        List<BlockComponent.BlockType> expectedTypes = java.util.stream.IntStream
-                .range(0, quota)
-                .mapToObj(index -> script[index % script.length])
-                .toList();
-        assertIterableEquals(expectedTypes, placedTypes);
-    }
-
     private void advanceToNextBuild() {
         roundSystem.advanceRound();
         assertEquals(BUILD, phase());
-    }
-
-    private EntityId createBlock(BlockComponent.BlockType blockType, PositionComponent position) {
-        EntityId blockId = ed.createEntity();
-        ed.setComponents(blockId,
-                new BlockComponent(blockType),
-                position,
-                new ModelComponent(blockType.name().toLowerCase(Locale.ROOT) + "-block"));
-        return blockId;
-    }
-
-    private PlacedBlock blockAt(PositionComponent position) {
-        return placedBlocks().stream()
-                .filter(block -> block.position().equals(position))
-                .findFirst()
-                .orElseThrow();
     }
 
     private List<PlacedBlock> placedBlocks() {

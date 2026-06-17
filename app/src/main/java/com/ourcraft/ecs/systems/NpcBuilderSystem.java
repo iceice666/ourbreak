@@ -10,18 +10,14 @@ import com.ourcraft.ecs.components.PhaseComponent;
 import com.ourcraft.ecs.components.PhaseComponent.Phase;
 import com.ourcraft.ecs.components.PositionComponent;
 import com.ourcraft.ecs.components.RoundComponent;
-import com.simsilica.es.Entity;
 import com.simsilica.es.EntityComponent;
 import com.simsilica.es.EntityData;
 import com.simsilica.es.EntityId;
-import com.simsilica.es.EntitySet;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
+import java.util.Random;
 
 public class NpcBuilderSystem {
 
@@ -36,22 +32,20 @@ public class NpcBuilderSystem {
     private static final double RATE_MAX = 1.20;
     /** Per-round decay of the remaining rate margin — shrinking increments, so difficulty never spikes. */
     private static final double RATE_DECAY = 0.85;
-    /** Blocks stack this many high per grid cell before the wall expands outward (3D fortress). */
-    public static final int WALL_HEIGHT = 3;
-
     private final EntityData ed;
     private final RoundSystem roundSystem;
     private final EntityId mascotId;
-    private final EntitySet positionedBlocks;
+    /** Base seed so each run's villages differ; XORed with the round for per-round variety. */
+    private final long villageSeedBase = new Random().nextLong();
 
     private int activeRound = -1;
     private int placementsThisRound;
+    private List<VillageGenerator.PlacedBlock> village = List.of();
 
     public NpcBuilderSystem(EntityData ed, RoundSystem roundSystem, EntityId mascotId) {
         this.ed = Objects.requireNonNull(ed, "ed");
         this.roundSystem = Objects.requireNonNull(roundSystem, "roundSystem");
         this.mascotId = Objects.requireNonNull(mascotId, "mascotId");
-        this.positionedBlocks = ed.getEntities(BlockComponent.class, PositionComponent.class);
     }
 
     public void update(float tpf) {
@@ -68,23 +62,29 @@ public class NpcBuilderSystem {
         }
 
         if (round.currentRound() != activeRound) {
+            // New round → generate a fresh village (a different seed each round and run).
             activeRound = round.currentRound();
             placementsThisRound = 0;
+            village = VillageGenerator.generate(
+                    blocksForRound(activeRound), blockScript(activeRound), villageSeedBase ^ activeRound);
         }
-        int quota = blocksForRound(activeRound);
+        int quota = village.size();
         if (placementsThisRound >= quota) {
             return;
         }
 
-        List<BlockType> script = blockScript(activeRound);
-        positionedBlocks.applyChanges();
         PositionComponent mascotPosition = ed.getComponent(mascotId, PositionComponent.class);
         if (mascotPosition == null) {
             throw new IllegalStateException("mascot must have a PositionComponent");
         }
 
-        PositionComponent placement = findFirstAvailablePosition(mascotPosition);
-        BlockType blockType = script.get(placementsThisRound % script.size());
+        // Place the next village block this frame (so the village visibly rises), translated onto the mascot.
+        VillageGenerator.PlacedBlock next = village.get(placementsThisRound);
+        PositionComponent placement = new PositionComponent(
+                mascotPosition.x() + next.cell().x(),
+                mascotPosition.y() + next.cell().y(),
+                mascotPosition.z() + next.cell().z());
+        BlockType blockType = next.type();
 
         EntityId blockId = ed.createEntity();
         ed.setComponents(blockId,
@@ -101,7 +101,7 @@ public class NpcBuilderSystem {
     }
 
     public void close() {
-        positionedBlocks.release();
+        // No retained EntitySet — the village is generated on the fly.
     }
 
     private <T extends EntityComponent> T requireGameStateComponent(
@@ -114,63 +114,6 @@ public class NpcBuilderSystem {
                     "game-state entity must have a " + componentType.getSimpleName());
         }
         return component;
-    }
-
-    private PositionComponent findFirstAvailablePosition(PositionComponent mascotPosition) {
-        Set<PositionComponent> occupied = new HashSet<>();
-        for (Entity block : positionedBlocks) {
-            occupied.add(block.get(PositionComponent.class));
-        }
-
-        // 3D concentric wall: fill a ring all around, stack it WALL_HEIGHT tall, then expand outward.
-        int candidatesToCheck = occupied.size() + 1;
-        int checked = 0;
-        for (int radius = 1; checked < candidatesToCheck; radius++) {
-            for (int layer = 0; layer < WALL_HEIGHT && checked < candidatesToCheck; layer++) {
-                for (GridOffset offset : ringOffsets(radius)) {
-                    PositionComponent candidate = new PositionComponent(
-                            mascotPosition.x() + offset.x(),
-                            mascotPosition.y() + layer,
-                            mascotPosition.z() + offset.z());
-                    if (!occupied.contains(candidate)) {
-                        return candidate;
-                    }
-                    checked++;
-                    if (checked == candidatesToCheck) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        throw new IllegalStateException("unable to find an unoccupied block position");
-    }
-
-    private List<GridOffset> ringOffsets(int radius) {
-        List<GridOffset> offsets = new ArrayList<>(radius * 8);
-        offsets.add(new GridOffset(0, radius));
-        offsets.add(new GridOffset(-radius, 0));
-        offsets.add(new GridOffset(radius, 0));
-
-        for (int x = 1; x <= radius; x++) {
-            offsets.add(new GridOffset(-x, radius));
-            offsets.add(new GridOffset(x, radius));
-        }
-
-        for (int z = radius - 1; z >= -radius; z--) {
-            if (z == 0) {
-                continue;
-            }
-            offsets.add(new GridOffset(-radius, z));
-            offsets.add(new GridOffset(radius, z));
-        }
-
-        for (int x = radius - 1; x >= 1; x--) {
-            offsets.add(new GridOffset(-x, -radius));
-            offsets.add(new GridOffset(x, -radius));
-        }
-        offsets.add(new GridOffset(0, -radius));
-        return offsets;
     }
 
     /**
@@ -209,8 +152,5 @@ public class NpcBuilderSystem {
 
     private String modelId(BlockType blockType) {
         return blockType.name().toLowerCase(Locale.ROOT) + "-block";
-    }
-
-    private record GridOffset(int x, int z) {
     }
 }

@@ -7,6 +7,7 @@ import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.math.FastMath;
 import com.jme3.renderer.Camera;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -29,6 +30,8 @@ public class GameEndState extends BaseAppState {
     private Camera camera;
     private Geometry scrim;
     private Container panel;
+    private Label newBestLabel;
+    private float time;
 
     private final ActionListener shortcuts = (name, isPressed, tpf) -> {
         if (isPressed && RESTART.equals(name)) {
@@ -52,16 +55,36 @@ public class GameEndState extends BaseAppState {
 
         scrim = UiTheme.scrim(app.getAssetManager(), camera.getWidth(), camera.getHeight());
 
+        // Record the run and reframe the game-over as an achievement when it's a new record.
+        boolean newBest = HighScore.submit(roundReached);
+        int best = HighScore.best();
+
         panel = new Container();
         panel.setBackground(UiTheme.card(UiTheme.PANEL, 44f, 32f));
 
         panel.addChild(UiTheme.heading("GAME OVER", 52f, UiTheme.CORAL));
+        if (newBest) {
+            newBestLabel = panel.addChild(UiTheme.heading("★  NEW BEST  ★", 32f, UiTheme.GOLD));
+        }
         panel.addChild(UiTheme.heading("Reached Round", 20f, UiTheme.TEXT_DIM));
         panel.addChild(UiTheme.heading(String.valueOf(roundReached), 72f, UiTheme.GOLD)); // the score shines
+        if (!newBest) {
+            panel.addChild(UiTheme.heading("Best: Round " + best, 18f, UiTheme.AQUA));
+        }
         Label spacer = panel.addChild(new Label(""));
         spacer.setFontSize(10f);
         panel.addChild(UiTheme.primary("Restart")).addClickCommands(src -> restart());
         panel.addChild(UiTheme.heading("Enter / Esc", 14f, UiTheme.TEXT_DIM));
+    }
+
+    @Override
+    public void update(float tpf) {
+        if (newBestLabel != null) {
+            // Pulse the record banner so the win lands emotionally.
+            time += tpf;
+            float k = 0.7f + 0.3f * FastMath.sin(time * 6f);
+            newBestLabel.setColor(UiTheme.GOLD.mult(k));
+        }
     }
 
     private void layout() {

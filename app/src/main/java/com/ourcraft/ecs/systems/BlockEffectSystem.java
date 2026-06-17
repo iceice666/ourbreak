@@ -73,7 +73,15 @@ public class BlockEffectSystem {
 
     /** Block entities in the 3x3 grid neighborhood around the center block (center + occupied neighbors). */
     public List<EntityId> droneAreaTargets(EntityId centerBlockId) {
+        return droneAreaTargets(centerBlockId, 1);
+    }
+
+    /** Occupied blocks in the (2·radius+1)² grid square (same height) centred on the block. */
+    public List<EntityId> droneAreaTargets(EntityId centerBlockId, int radius) {
         Objects.requireNonNull(centerBlockId, "centerBlockId");
+        if (radius < 1) {
+            throw new IllegalArgumentException("radius must be at least 1");
+        }
 
         PositionComponent center = ed.getComponent(centerBlockId, PositionComponent.class);
         if (center == null) {
@@ -86,9 +94,9 @@ public class BlockEffectSystem {
             byPosition.put(block.get(PositionComponent.class), block.getId());
         }
 
-        List<EntityId> targets = new ArrayList<>(9);
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
+        List<EntityId> targets = new ArrayList<>();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
                 PositionComponent candidate =
                         new PositionComponent(center.x() + dx, center.y(), center.z() + dz);
                 EntityId id = byPosition.get(candidate);

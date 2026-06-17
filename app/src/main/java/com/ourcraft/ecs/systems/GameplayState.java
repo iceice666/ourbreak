@@ -27,6 +27,7 @@ public class GameplayState extends BaseAppState {
     private EnvironmentState environment;
     private MascotState mascot;
     private HitFeedbackState hitFeedback;
+    private DestructionFxState destructionFx;
     private PoisonState poison;
     private RoundSystem roundSystem;
     private VictorySystem victorySystem;
@@ -35,6 +36,7 @@ public class GameplayState extends BaseAppState {
     private CoralGrowthSystem coralGrowth;
     private PlayerControlState playerControl;
     private HudState hud;
+    private RoundBannerState roundBanner;
 
     private EntityId gameStateId;
     private boolean resolved;
@@ -53,6 +55,9 @@ public class GameplayState extends BaseAppState {
         hitFeedback = new HitFeedbackState(ed);
         getStateManager().attach(hitFeedback);
 
+        destructionFx = new DestructionFxState(ed);
+        getStateManager().attach(destructionFx);
+
         roundSystem = new RoundSystem(ed);
         roundSystem.initialize();
         gameStateId = roundSystem.getGameStateId();
@@ -63,7 +68,7 @@ public class GameplayState extends BaseAppState {
         EntityId playerId = ed.createEntity();
         ed.setComponents(playerId,
                 new WeaponComponent(WeaponType.SWORD),
-                new PositionComponent(0f, 0f, 8f));
+                new PositionComponent(0f, 0f, 13f));
 
         victorySystem = new VictorySystem(ed, gameStateId, roundSystem);
         npcBuilder = new NpcBuilderSystem(ed, roundSystem, mascotId);
@@ -79,18 +84,23 @@ public class GameplayState extends BaseAppState {
         hud = new HudState(ed, gameStateId, playerId);
         getStateManager().attach(hud);
 
+        roundBanner = new RoundBannerState(ed, gameStateId);
+        getStateManager().attach(roundBanner);
+
         poison = new PoisonState(ed, playerId);
         getStateManager().attach(poison);
 
-        app.getCamera().setLocation(new Vector3f(0f, 1.5f, 8f));
+        app.getCamera().setLocation(new Vector3f(0f, 1.5f, 13f));
         app.getCamera().lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
     }
 
     @Override
     protected void cleanup(Application app) {
+        getStateManager().detach(roundBanner);
         getStateManager().detach(hud);
         getStateManager().detach(playerControl);
         getStateManager().detach(poison);
+        getStateManager().detach(destructionFx);
         getStateManager().detach(hitFeedback);
         getStateManager().detach(mascot);
         getStateManager().detach(environment);

@@ -156,8 +156,12 @@ public class HudState extends BaseAppState {
                 shownWeapon = type;
             }
 
-            // Layout: "Weapon: NAME" text at the bottom-left, then the icon right after it.
-            weaponLabel.setText(HudText.weapon(type));
+            // Layout: "Weapon: NAME" text at the bottom-left (with the drone's upgrade level), then icon.
+            String label = HudText.weapon(type);
+            if (type == WeaponType.DRONE) {
+                label += "  Lv." + WeaponSystem.droneLevelForRound(round.currentRound());
+            }
+            weaponLabel.setText(label);
             float textH = weaponLabel.getPreferredSize().y;
             float textW = weaponLabel.getPreferredSize().x;
             weaponLabel.setLocalTranslation(MARGIN, MARGIN + textH, 0f);

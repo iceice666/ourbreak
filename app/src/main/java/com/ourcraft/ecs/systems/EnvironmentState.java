@@ -5,21 +5,18 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
-import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector2f;
-import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
-import com.jme3.scene.debug.Grid;
 import com.jme3.scene.shape.Quad;
 import com.jme3.texture.Texture;
 
 /**
- * Minimal gameplay scene decoration: a flat ground plane plus a grid overlay at the block base level,
- * so the player has a spatial reference instead of floating blocks. Placeholder visuals only — real
- * environment/block art is M8. Attached/detached by {@link GameplayState}.
+ * Minimal gameplay scene decoration: a flat sandy ground plane so the player has a spatial reference
+ * instead of floating blocks. Placeholder visuals only — real environment/block art is M8.
+ * Attached/detached by {@link GameplayState}.
  */
 public class EnvironmentState extends BaseAppState {
 
@@ -28,8 +25,6 @@ public class EnvironmentState extends BaseAppState {
     private static final float GROUND_SIZE = 400f;
     /** World units per sand-texture tile (so the seamless texture repeats instead of stretching). */
     private static final float SAND_TILE = 8f;
-    private static final int GRID_LINES = 101;
-    private static final float GRID_SPACING = 1f;
 
     private Node sceneRoot;
     private AssetManager assetManager;
@@ -75,18 +70,6 @@ public class EnvironmentState extends BaseAppState {
         ground.rotate(-FastMath.HALF_PI, 0f, 0f);
         ground.setLocalTranslation(-GROUND_SIZE / 2f, GROUND_Y, GROUND_SIZE / 2f);
         node.attachChild(ground);
-
-        // Faint sand-tinted grid: keeps block-cell alignment readable without breaking the beach look.
-        Geometry grid = new Geometry("grid", new Grid(GRID_LINES, GRID_LINES, GRID_SPACING));
-        Material gridMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        gridMat.setColor("Color", new ColorRGBA(0.85f, 0.78f, 0.45f, 0.18f));
-        gridMat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
-        grid.setMaterial(gridMat);
-        grid.setQueueBucket(RenderQueue.Bucket.Transparent);
-        float half = (GRID_LINES - 1) * GRID_SPACING / 2f;
-        // Sit the grid just above the floor to avoid z-fighting, centred on the origin.
-        grid.setLocalTranslation(-half, GROUND_Y + 0.02f, -half);
-        node.attachChild(grid);
 
         return node;
     }

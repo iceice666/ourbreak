@@ -41,6 +41,21 @@ public class WeaponSystem {
     /** A Shell destroyed by the wrong weapon (Sword/Drone) splits into this many new Shells (uncapped). */
     public static final int SHELL_SPLIT_COUNT = 2;
 
+    /** Rounds per drone level — the drone's blast grows one ring every this many rounds. */
+    public static final int DRONE_ROUNDS_PER_LEVEL = 3;
+
+    /**
+     * The drone's upgrade level for a round (1-based, uncapped): +1 every {@link #DRONE_ROUNDS_PER_LEVEL}
+     * rounds. The blast is a (2·level+1)² grid — Lv1 = 3×3, Lv2 = 5×5, Lv3 = 7×7, … — so it clears more
+     * as the survival run escalates (and more easily catches Jellyfish/Shells, raising the risk too).
+     */
+    public static int droneLevelForRound(int round) {
+        if (round < 1) {
+            throw new IllegalArgumentException("round must be at least 1");
+        }
+        return 1 + (round - 1) / DRONE_ROUNDS_PER_LEVEL;
+    }
+
     private final EntityData ed;
     private final EntityId gameStateId;
     private final EntitySet positionedBlocks;

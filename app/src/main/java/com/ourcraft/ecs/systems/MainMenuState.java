@@ -56,6 +56,10 @@ public class MainMenuState extends BaseAppState {
 
         panel.addChild(UiTheme.title("OURCRAFT"));
         panel.addChild(UiTheme.heading("Endless Beach Siege", 20f, UiTheme.AQUA));
+        int best = HighScore.best();
+        if (best > 0) {
+            panel.addChild(UiTheme.heading("Best: Round " + best, 16f, UiTheme.GOLD));
+        }
         panel.addChild(spacer());
 
         panel.addChild(UiTheme.primary("Start Game")).addClickCommands(src -> startGame());

@@ -26,6 +26,7 @@ import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.ourcraft.ecs.components.PositionComponent;
+import com.ourcraft.ecs.components.RoundComponent;
 import com.ourcraft.ecs.components.WeaponComponent;
 import com.ourcraft.ecs.components.WeaponComponent.WeaponType;
 import com.simsilica.es.EntityData;
@@ -75,6 +76,7 @@ public class PlayerControlState extends BaseAppState {
 
     private final EntityData ed;
     private final EntityId playerId;
+    private final EntityId gameStateId;
     private final WeaponSystem weaponSystem;
     private final BlockEffectSystem blockEffect;
 
@@ -114,6 +116,7 @@ public class PlayerControlState extends BaseAppState {
             BlockEffectSystem blockEffect) {
         this.ed = Objects.requireNonNull(ed, "ed");
         this.playerId = Objects.requireNonNull(playerId, "playerId");
+        this.gameStateId = Objects.requireNonNull(gameStateId, "gameStateId");
         this.weaponSystem = new WeaponSystem(ed, gameStateId);
         this.blockEffect = Objects.requireNonNull(blockEffect, "blockEffect");
     }
@@ -349,18 +352,35 @@ public class PlayerControlState extends BaseAppState {
         if (target == null) {
             return;
         }
-        // DRONE bombs a 3x3 area; SWORD sweeps a 3-cell row across the view; GUN hits the single block.
+        // DRONE bombs a (2·level+1)² area that grows with the round; SWORD sweeps a 3-cell row; GUN single.
         WeaponComponent weapon = ed.getComponent(playerId, WeaponComponent.class);
         WeaponType weaponType = weapon != null ? weapon.weaponType() : WeaponType.SWORD;
+        int droneRadius = WeaponSystem.droneLevelForRound(currentRound());
         Collection<EntityId> targets = switch (weaponType) {
-            case DRONE -> blockEffect.droneAreaTargets(target);
+            case DRONE -> blockEffect.droneAreaTargets(target, droneRadius);
             case SWORD -> blockEffect.rowTargets(target, swordSweepAlongX());
             case GUN -> List.of(target);
         };
+        // Capture the blast centre before the block is destroyed, for the drone explosion FX.
+        PositionComponent centre = weaponType == WeaponType.DRONE
+                ? ed.getComponent(target, PositionComponent.class) : null;
+
         // WeaponSystem gates on the ATTACK phase and applies the counter-matrix and durability;
         // destroyed entities are removed by the model-view synchronizer.
         weaponSystem.attack(playerId, targets);
         playWeaponSound(weaponType);
+
+        if (centre != null) {
+            DestructionFxState fx = getStateManager().getState(DestructionFxState.class);
+            if (fx != null) {
+                fx.explosion(new com.jme3.math.Vector3f(centre.x(), centre.y(), centre.z()), droneRadius);
+            }
+        }
+    }
+
+    private int currentRound() {
+        RoundComponent round = ed.getComponent(gameStateId, RoundComponent.class);
+        return round != null ? round.currentRound() : 1;
     }
 
     /** The sword sweeps left-to-right across the view: along X when facing mostly ±Z, else along Z. */
@@ -384,14 +404,15 @@ public class PlayerControlState extends BaseAppState {
         CollisionResults results = new CollisionResults();
         rootNode.collideWith(ray, results);
 
-        CollisionResult hit = results.getClosestCollision();
-        if (hit == null) {
-            return null;
-        }
-        for (Spatial s = hit.getGeometry(); s != null; s = s.getParent()) {
-            Long rawId = s.getUserData(ModelViewSynchronizer.ENTITY_ID_USER_DATA);
-            if (rawId != null) {
-                return new EntityId(rawId);
+        // Nearest-first: return the first collision that resolves to a block entity, skipping non-block
+        // hits (explosion FX, flying debris, the ground, the mascot). Otherwise transient FX in front of
+        // the wall would intercept the pick for ~1s after a blast and block re-targeting that spot.
+        for (CollisionResult hit : results) {
+            for (Spatial s = hit.getGeometry(); s != null; s = s.getParent()) {
+                Long rawId = s.getUserData(ModelViewSynchronizer.ENTITY_ID_USER_DATA);
+                if (rawId != null) {
+                    return new EntityId(rawId);
+                }
             }
         }
         return null;
