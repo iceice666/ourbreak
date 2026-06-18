@@ -36,7 +36,7 @@ java {
 }
 
 application {
-    mainClass = "com.ourbreak.OurcraftGame"
+    mainClass = "com.ourbreak.OurbreakGame"
     applicationName = "ourbreak"
     if (System.getProperty("os.name").lowercase().contains("mac")) {
         applicationDefaultJvmArgs = listOf("-XstartOnFirstThread")

@@ -54,7 +54,7 @@ public class MainMenuState extends BaseAppState {
         panel = new Container();
         panel.setBackground(UiTheme.card(UiTheme.PANEL, 44f, 32f));
 
-        panel.addChild(UiTheme.title("OURCRAFT"));
+        panel.addChild(UiTheme.title("OURBREAK"));
         panel.addChild(UiTheme.heading("Endless Beach Siege", 20f, UiTheme.AQUA));
         int best = HighScore.best();
         if (best > 0) {
