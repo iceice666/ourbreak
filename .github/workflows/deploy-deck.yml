@@ -31,23 +31,17 @@ jobs:
         working-directory: deck
         run: npm ci
 
-      - name: Install Playwright browser
+      - name: Build deck
         working-directory: deck
-        run: npx playwright install chromium
+        run: npm run build
 
-      - name: Start dev server and export slide as HTML
+      - name: Add SPA fallback + root redirect
         working-directory: deck
         run: |
-          npm run dev -- --port 5173 &
-          server_pid=$!
-          for i in {1..30}; do
-            if curl -s http://localhost:5173/s/ourbreak >/dev/null; then
-              break
-            fi
-            sleep 1
-          done
-          node scripts/export-html.mjs
-          kill $server_pid || true
+          cat > dist/_redirects <<'EOF'
+          /     /s/ourbreak   302
+          /*    /index.html   200
+          EOF
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
@@ -55,4 +49,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: deck
-          command: pages deploy export --project-name=ourbreak --branch=main
+          command: pages deploy dist --project-name=ourbreak --branch=main
