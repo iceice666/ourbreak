@@ -1,0 +1,52 @@
+name: Deploy deck
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'deck/**'
+      - '.github/workflows/deploy-deck.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-deck
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: deck/package-lock.json
+
+      - name: Install dependencies
+        working-directory: deck
+        run: npm ci
+
+      - name: Build deck
+        working-directory: deck
+        run: npm run build
+
+      - name: Add SPA fallback + root redirect
+        working-directory: deck
+        run: |
+          cat > dist/_redirects <<'EOF'
+          /     /s/ourbreak   302
+          /*    /index.html   200
+          EOF
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: deck
+          command: pages deploy dist --project-name=ourbreak --branch=main

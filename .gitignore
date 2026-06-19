@@ -35,3 +35,6 @@ build
 
 # Ignore Kotlin plugin data
 .kotlin
+
+# Wrangler / Cloudflare local cache
+.wrangler/
