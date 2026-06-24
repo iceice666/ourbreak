@@ -167,6 +167,7 @@ const AnchorBlocks = () => (
 // ─── 01 · Title ──────────────────────────────────────────────────────────────
 const Cover: Page = () => (
   <div style={{ ...page(DARK), display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 130px' }}>
+    {/* @slide-comment id="c-3af35939" ts="2026-06-24T02:50:56.441Z" text="eyJub3RlIjoiYWRkIGEgc3R1ZGVudCBJRCBzZWN0aW9uOlxuRjc0MTQ0NzU3IEY3NDE0NDc2NSBGNzQxNDQ3MzFcbmFuZCB3ZSBhcmUgZ3JvdXAgNCJ9" */}
     <AnchorBlocks />
     <div style={{ position: 'absolute', top: 130, left: 130, display: 'flex', alignItems: 'center', gap: 16 }}>
       <span style={{ width: 34, height: 34, background: DARK.accent, borderRadius: 7, display: 'block' }} />
@@ -181,6 +182,10 @@ const Cover: Page = () => (
     </p>
     <div style={{ marginTop: 40 }}>
       <Rule color={DARK.accent} width={160} />
+    </div>
+    <div style={{ marginTop: 24, display: 'flex', alignItems: 'baseline', gap: 32 }}>
+      <span style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: DARK.muted, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Group 4</span>
+      <span style={{ fontFamily: MONO, fontSize: 18, color: DARK.muted, letterSpacing: '0.04em', opacity: 0.8 }}>F74144757 · F74144765 · F74144731</span>
     </div>
     <Footer scope={DARK} label="ourbreak · 第一人稱海灘破壞遊戲" />
   </div>
