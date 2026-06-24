@@ -8,8 +8,10 @@ the village gets bigger and the pressure rises every round. Your score is how fa
 Built with **Java 21 + jMonkeyEngine 3.9 + Zay-ES (ECS) + Lemur (UI)**. MIT licensed.
 
 ## Gameplay
-
-📹 **[▶ Latest gameplay demo (Google Drive)](https://drive.google.com/drive/folders/1PX8SBM3ZS3v7FYbvHv5lShIvldhKZ7L2?usp=sharing)** — updated build showing the crab-village siege, the lighting pass (sun / shadows / god rays) and the first-person weapons.
+### Latest gameplay demo 
+**[▶ Youtube](https://youtu.be/97LbCJacOzY)** 
+**[▶ Google Drive](https://drive.google.com/drive/folders/1PX8SBM3ZS3v7FYbvHv5lShIvldhKZ7L2?usp=sharing)** 
+— updated build showing the crab-village siege, the lighting pass (sun / shadows / god rays) and the first-person weapons.
 
 ## How to play
 
