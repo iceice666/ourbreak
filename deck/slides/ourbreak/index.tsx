@@ -273,6 +273,76 @@ const Agenda: Page = () => (
   </div>
 );
 
+// ─── 03b · Engineering harness cycle — the spine the whole deck hangs on ──────
+// Drawn once, right after the agenda: spec → code → test gate → devlog → commit,
+// looping back. Every later section is one box on this chain, so the talk can
+// call back ("this is the test-gate box") instead of re-introducing each part.
+const HarnessStep = ({ n, title, sub, gate }: { n: string; title: string; sub: string; gate?: boolean }) => (
+  <div
+    style={{
+      flex: 1,
+      padding: '22px 18px',
+      background: gate ? DARK.accent : DARK.surface,
+      color: gate ? DARK.onAccent : DARK.text,
+      border: `1px solid ${gate ? DARK.accent : DARK.border}`,
+      borderRadius: 10,
+      textAlign: 'center',
+    }}
+  >
+    <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, opacity: 0.72 }}>{n}</div>
+    <div style={{ fontSize: 28, fontWeight: 780, margin: '8px 0 6px', lineHeight: 1.15 }}>{title}</div>
+    <div style={{ fontSize: 19, opacity: 0.84, lineHeight: 1.35 }}>{sub}</div>
+  </div>
+);
+
+const HarnessArrow = () => (
+  <span style={{ fontSize: 32, lineHeight: 1, color: DARK.accentSoft, flexShrink: 0, alignSelf: 'center' }}>→</span>
+);
+
+const HarnessCyclePage: Page = () => (
+  <div style={{ ...page(DARK), display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 130px' }}>
+    <Eyebrow color={DARK.accent}>工程框架 · 一個閉環</Eyebrow>
+    <h2 style={{ fontSize: 64, fontWeight: 840, lineHeight: 1.16, margin: '20px 0 0', letterSpacing: '-0.01em' }}>
+      反 vibe 的閉環 —— spec 進，commit 出
+    </h2>
+    <p style={{ fontSize: 28, fontWeight: 500, color: DARK.muted, margin: '16px 0 0', maxWidth: 1340, lineHeight: 1.5 }}>
+      後面每一節都掛在這條鏈上 —— 規格、測試閘門、devlog、commit 不是各自獨立，而是一圈閉環。
+    </p>
+    <div style={{ display: 'flex', alignItems: 'stretch', gap: 16, marginTop: 46 }}>
+      <HarnessStep n="01" title="規格" sub="OpenSpec：proposal · design · tasks · spec" />
+      <HarnessArrow />
+      <HarnessStep n="02" title="實作" sub="照 spec 寫 code，不自由發揮" />
+      <HarnessArrow />
+      <HarnessStep n="03 ⛔" title="測試閘門" sub="./gradlew test 全綠才放行" gate />
+      <HarnessArrow />
+      <HarnessStep n="04" title="Devlog" sub="一篇 / commit · 凍結不可改" />
+      <HarnessArrow />
+      <HarnessStep n="05" title="Commit" sub="Conventional Commits" />
+    </div>
+    <div
+      style={{
+        marginTop: 22,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        padding: '16px 26px',
+        border: `1px dashed ${DARK.border}`,
+        borderRadius: 8,
+        fontSize: 25,
+        color: DARK.muted,
+      }}
+    >
+      <span style={{ color: DARK.accent, fontWeight: 700 }}>✗</span>
+      測試紅 → pre-commit 擋下，壞掉的程式碼進不了 repo。機制把關，不靠 agent 自覺。
+    </div>
+    <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 14, fontSize: 26, color: DARK.text, fontWeight: 600 }}>
+      <span style={{ fontSize: 30, color: DARK.accent }}>↺</span>
+      下一個 change 回到「規格」—— 每一圈都留下不可變軌跡。
+    </div>
+    <Footer scope={DARK} label="工程框架 · 反 vibe 閉環" />
+  </div>
+);
+
 // ─── Content-page primitives ─────────────────────────────────────────────────
 const contentPage = (s: Scope) => ({
   ...page(s),
@@ -633,7 +703,7 @@ const TddPage: Page = () => (
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <PointCard scope={LIGHT} n="01" title="AppState 狀態機" body="Menu ⇄ HowTo → Gameplay → GameEnd，各畫面自管輸入" />
-        <PointCard scope={LIGHT} n="02" title="ECS 切分" body="9 個 component × ~15 個 system，共讀寫一份 EntityData" />
+        <PointCard scope={LIGHT} n="02" title="ECS 切分" body="9 個 component × 9 個 system / state，共讀寫一份 EntityData" />
         <PointCard scope={LIGHT} n="03" title="Headless 測試" body="所有遊戲邏輯不開視窗、不依賴 render thread 就能測" />
       </div>
     </div>
@@ -701,65 +771,10 @@ const ArtStylePage: Page = () => (
   </div>
 );
 
-// ─── 06b · AI 對話截圖 — 為什麼選 jME + Zay-ES (dark) ────────────────────────
-const JmeEcsDecisionPage: Page = () => (
-  <div style={contentPage(DARK)}>
-    <PageHead
-      scope={DARK}
-      eyebrow="設計架構 · AI 對話截圖"
-      title="AI 選定技術棧的當下"
-      sub="jME + Zay-ES 不是直覺 —— 是 AI 查過 Maven Central 版本、評估 Artemis-odb / Zay-ES / DIY 後寫進 devlog 的決策。"
-    />
-    <div
-      style={{
-        flex: 1,
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 28,
-        marginTop: 36,
-        minHeight: 0,
-      }}
-    >
-      <div
-        style={{
-          borderRadius: 10,
-          overflow: 'hidden',
-          border: `1px solid ${DARK.border}`,
-          background: DARK.surface,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <img
-          src={aiChatImg1}
-          alt="AI 對話截圖 1 — 技術棧選擇"
-          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-        />
-      </div>
-      <div
-        style={{
-          borderRadius: 10,
-          overflow: 'hidden',
-          border: `1px solid ${DARK.border}`,
-          background: DARK.surface,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <img
-          src={aiChatImg2}
-          alt="AI 對話截圖 2 — ECS 決策"
-          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-        />
-      </div>
-    </div>
-    <Footer scope={DARK} label="設計架構 · AI 對話截圖" />
-  </div>
-);
-
-// ─── 06c · AI 決策紀錄 — 技術選型可追溯 (light) ────────────────────────────────
+// ─── 06b · AI 對話 + 決策紀錄 — 技術選型可追溯 (light, merged) ─────────────────
+// Merges the old "AI chat screenshot" page and the "decision record" page: the
+// raw conversation (left) and the auditable ✓/✗ comparison it produced (right)
+// now read as one cause-and-effect, instead of two slides on the same decision.
 const OptionRow = ({ name, ok, reason }: { name: string; ok: boolean; reason: string }) => (
   <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, padding: '13px 0', borderTop: `1px solid ${LIGHT.border}` }}>
     <span style={{ fontSize: 24, fontWeight: 800, color: ok ? LIGHT.accent : LIGHT.cool, width: 26, flexShrink: 0, textAlign: 'center' }}>
@@ -774,13 +789,37 @@ const AiDecisionRecordPage: Page = () => (
   <div style={contentPage(LIGHT)}>
     <PageHead
       scope={LIGHT}
-      eyebrow="設計架構 · AI 決策紀錄（可追溯）"
-      title="技術選型 — AI 比過才寫進 TDD"
-      sub="scaffold-jme3-zay-es devlog：AI 查 Maven Central 版本（不靠記憶猜），比過 4 套 ECS 才下決定。"
+      eyebrow="設計架構 · AI 對話 + 決策紀錄"
+      title="技術選型 — AI 比過 4 套 ECS 才寫進 TDD"
+      sub="不是直覺：AI 查 Maven Central 版本（不靠記憶猜）、比過 4 套 ECS —— 左為當下對話，右為它產出的可追溯結論。"
     />
-    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: 56, marginTop: 32, alignItems: 'center' }}>
-      <div>
-        <div style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: LIGHT.muted, letterSpacing: '0.04em', marginBottom: 4 }}>
+    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.05fr', gap: 40, marginTop: 26, minHeight: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0 }}>
+        {[aiChatImg1, aiChatImg2].map((src, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              minHeight: 0,
+              borderRadius: 10,
+              overflow: 'hidden',
+              border: `1px solid ${LIGHT.border}`,
+              background: CODE_BG,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <img
+              src={src}
+              alt={`AI 對話截圖 ${i + 1}`}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: LIGHT.muted, letterSpacing: '0.04em', marginBottom: 4 }}>
           // GDD 要求第一人稱 3D + 大量方塊 entity + headless 可測
         </div>
         <div style={{ borderBottom: `1px solid ${LIGHT.border}` }}>
@@ -789,29 +828,29 @@ const AiDecisionRecordPage: Page = () => (
           <OptionRow name="Ashley" ok={false} reason="libGDX 取向 → 不貼合 jME" />
           <OptionRow name="DIY" ok={false} reason="過早造輪子" />
         </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <PointCard scope={LIGHT} n="引擎" title="jME 3.9.0-stable" body="非 3.10（beta）· 非 3.8（已被取代）—— 取 Maven Central 最新 stable" />
-        <PointCard scope={LIGHT} n="記憶" title="Component = record" body="不可變，契合 Zay-ES「換掉整個 component」更新模型，零樣板" />
+        <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+          <Chip scope={LIGHT}>引擎 jME 3.9.0-stable（非 beta / 非舊版）</Chip>
+          <Chip scope={LIGHT}>Component = record · 零樣板</Chip>
+        </div>
+        <div
+          style={{
+            marginTop: 16,
+            padding: '16px 24px',
+            background: LIGHT.raised,
+            border: `1px solid ${LIGHT.border}`,
+            borderLeft: `5px solid ${LIGHT.accent}`,
+            borderRadius: 8,
+            fontSize: 23,
+            color: LIGHT.text,
+            lineHeight: 1.4,
+          }}
+        >
+          → 結論寫進 <span style={{ fontFamily: MONO, fontWeight: 700, color: LIGHT.accent }}>tdd.md</span> 與{' '}
+          <span style={{ fontFamily: MONO, fontWeight: 700, color: LIGHT.accent }}>libs.versions.toml</span> —— 每個版本號與選型都在 devlog 留得到推理。
+        </div>
       </div>
     </div>
-    <div
-      style={{
-        marginTop: 24,
-        padding: '18px 28px',
-        background: LIGHT.raised,
-        border: `1px solid ${LIGHT.border}`,
-        borderLeft: `5px solid ${LIGHT.accent}`,
-        borderRadius: 8,
-        fontSize: 25,
-        color: LIGHT.text,
-        lineHeight: 1.4,
-      }}
-    >
-      → 結論寫進 <span style={{ fontFamily: MONO, fontWeight: 700, color: LIGHT.accent }}>tdd.md</span> 與{' '}
-      <span style={{ fontFamily: MONO, fontWeight: 700, color: LIGHT.accent }}>libs.versions.toml</span> —— 每個版本號與選型都在 devlog 留得到推理。
-    </div>
-    <Footer scope={LIGHT} label="設計架構 · AI 決策紀錄" />
+    <Footer scope={LIGHT} label="設計架構 · AI 對話 + 決策紀錄" />
   </div>
 );
 
@@ -1011,21 +1050,45 @@ const LogRow = ({
   </div>
 );
 
+// ─── 09 · Devlog + AI 決策紀錄 (dark, merged) ─────────────────────────────────
+// Merges the devlog "what it is" page with the "three real decision quotes"
+// page: the frozen timeline (left) and the reasoning those entries actually
+// captured (right) now make one point instead of two near-identical slides.
+const QuoteCard = ({ slug, quote, decision }: { slug: string; quote: string; decision: string }) => (
+  <div
+    style={{
+      padding: '18px 24px',
+      background: DARK.surface,
+      border: `1px solid ${DARK.border}`,
+      borderRadius: 10,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+    }}
+  >
+    <div style={{ fontFamily: MONO, fontSize: 18, color: DARK.accent, fontWeight: 700 }}>{slug}</div>
+    <div style={{ fontSize: 22, color: DARK.text, lineHeight: 1.45, fontStyle: 'italic' }}>「{quote}」</div>
+    <div style={{ fontSize: 20, color: DARK.muted, lineHeight: 1.38, borderTop: `1px solid ${DARK.border}`, paddingTop: 9 }}>
+      {decision}
+    </div>
+  </div>
+);
+
 const DevlogPage: Page = () => (
   <div style={contentPage(DARK)}>
     <PageHead
       scope={DARK}
       eyebrow="開發流程 · 留下不可變的軌跡"
-      title="Devlog — 每次 commit 一篇"
-      sub="YYYYMMDD/hh-mm-ss-slug.md。一旦 commit 就凍結，錯了只能在後面的條目修正。"
+      title="Devlog — 每次 commit 一篇，凍結不可改"
+      sub="64 篇 · 每 commit 一篇 · 一旦提交就凍結 · pre-commit hook 強制 —— 不只是日誌，是 AI 每個決策後留下的推理。"
     />
-    <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: 64, marginTop: 40, alignItems: 'start' }}>
+    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '0.82fr 1.18fr', gap: 48, marginTop: 28, minHeight: 0, alignItems: 'center' }}>
       <div
         style={{
           background: DARK.surface,
           border: `1px solid ${DARK.border}`,
           borderRadius: 10,
-          padding: '20px 30px',
+          padding: '20px 28px',
         }}
       >
         <div style={{ fontFamily: MONO, fontSize: 20, color: DARK.muted, marginBottom: 6 }}>devlog/20260616/</div>
@@ -1035,63 +1098,25 @@ const DevlogPage: Page = () => (
         <LogRow time="19:18:39" slug="mascot-crab" frozen />
         <LogRow time="13:20:33" slug="endless-survival-mode" frozen />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <PointCard scope={DARK} n="→" title="逼 agent 留記憶" body="每個 commit 寫下做了什麼、為何這樣決定" />
-        <PointCard scope={DARK} n="→" title="凍結不可改" body="過去是時間切片，不回頭潤稿、不補洞" />
-        <PointCard scope={DARK} n="⛓" title="hook 強制" body="pre-commit 沒附 devlog 就擋下，不靠自覺" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <QuoteCard
+          slug="scaffold-jme3-zay-es"
+          quote="Immutability for free; matches Zay-ES's 'replace the component' update model; no boilerplate."
+          decision="決定：Components 改用 Java records，plain class 被明確否決 —— Java 21 下已無優勢。"
+        />
+        <QuoteCard
+          slug="coral-regrowth-poison-textures"
+          quote="5s felt too vicious in playtest so we slowed it to 7s."
+          decision="決定：Coral 每 7 秒再生（從 5 秒調慢），footprint 防止無限擴張 —— playtest 後調整。"
+        />
+        <QuoteCard
+          slug="endless-difficulty-curve"
+          quote="the asymptotic rate means walls are always theoretically clearable, so you lose to your own skill, not an unwinnable wall."
+          decision="決定：難度用 Weber–Fechner 漸近模型 ρ(r) = 1.20 − 0.40·0.85^(r−5)，永遠不暴衝，測試鎖死。"
+        />
       </div>
     </div>
-    <Footer scope={DARK} label="開發流程 · Devlog" />
-  </div>
-);
-
-// ─── 09b · AI 決策紀錄 (dark, three quote cards) ──────────────────────────────
-const QuoteCard = ({ slug, quote, decision }: { slug: string; quote: string; decision: string }) => (
-  <div
-    style={{
-      padding: '22px 26px',
-      background: DARK.surface,
-      border: `1px solid ${DARK.border}`,
-      borderRadius: 10,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-    }}
-  >
-    <div style={{ fontFamily: MONO, fontSize: 18, color: DARK.accent, fontWeight: 700 }}>{slug}</div>
-    <div style={{ fontSize: 24, color: DARK.text, lineHeight: 1.5, fontStyle: 'italic' }}>「{quote}」</div>
-    <div style={{ fontSize: 21, color: DARK.muted, lineHeight: 1.4, borderTop: `1px solid ${DARK.border}`, paddingTop: 10 }}>
-      {decision}
-    </div>
-  </div>
-);
-
-const AiDialogPage: Page = () => (
-  <div style={contentPage(DARK)}>
-    <PageHead
-      scope={DARK}
-      eyebrow="開發流程 · AI 助手的決策紀錄"
-      title="Devlog — 每個決定都寫下為什麼"
-      sub="64 篇 devlog，每次 commit 一篇，凍結不可改。不只是日誌 —— 是 AI 在每個架構決策後留下的推理。"
-    />
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18, marginTop: 36 }}>
-      <QuoteCard
-        slug="20260603 · scaffold-jme3-zay-es"
-        quote="Immutability for free; matches Zay-ES's 'replace the component' update model; no boilerplate."
-        decision="決定：Components 改用 Java records。備選 plain class 被明確否決 —— Java 21 下已無優勢。"
-      />
-      <QuoteCard
-        slug="20260616 · coral-regrowth-poison-textures"
-        quote="co-designer wanted the hardcore snowball; the footprint cap keeps it bounded, and 5s felt too vicious in playtest so we slowed it to 7s."
-        decision="決定：Coral 每 7 秒再生（從 5 秒調慢），footprint 防止無限擴張 —— playtest 後調整。"
-      />
-      <QuoteCard
-        slug="20260616 · endless-difficulty-curve"
-        quote="keep the player in the flow channel... the asymptotic rate means walls are always theoretically clearable, so you lose to your own skill, not an unwinnable wall."
-        decision="決定：難度用 Weber–Fechner 漸近模型 ρ(r) = 1.20 − 0.40·0.85^(r−5)，永遠不暴衝，測試鎖死。"
-      />
-    </div>
-    <Footer scope={DARK} label="開發流程 · AI 決策紀錄" />
+    <Footer scope={DARK} label="開發流程 · Devlog + 決策紀錄" />
   </div>
 );
 
@@ -1209,7 +1234,7 @@ const VerifyPage: Page = () => (
       title="自動測試 ‖ 手動測試"
     />
     <div style={{ display: 'flex', gap: 30, marginTop: 40, alignItems: 'stretch' }}>
-      <VerifyPanel scope={LIGHT} tag="AUTO · 20 個 JUnit" title="Headless 邏輯測試" accent>
+      <VerifyPanel scope={LIGHT} tag="AUTO · 101 測試 · 20 類" title="Headless 邏輯測試" accent>
         <div style={{ borderBottom: `1px solid ${LIGHT.border}` }}>
           <VLine scope={LIGHT}>DifficultyCurveTest — 鎖死難度永遠遞增、不暴衝</VLine>
           <VLine scope={LIGHT}>VillageGeneratorTest — 種子可重現、受預算上限</VLine>
@@ -1252,7 +1277,7 @@ const TestCodePage: Page = () => (
       scope={LIGHT}
       eyebrow="成果檢驗 · 真實測試長這樣"
       title="測試案例 — Shell 機制驗證"
-      sub="來自 WeaponTest.java（337 行 / 20 個測試）。測試的是機制，不是介面：Sword 打 Shell 分裂 2 個，碎片無上限。"
+      sub="來自 WeaponTest.java（336 行 / 15 個測試）。測試的是機制，不是介面：Sword 打 Shell 分裂 2 個，碎片無上限。"
     />
     <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 44, marginTop: 36, alignItems: 'center' }}>
       <CodeWin file="WeaponTest.java" fontSize={19}>
@@ -1279,7 +1304,7 @@ const TestCodePage: Page = () => (
       </CodeWin>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <PointCard scope={LIGHT} n="→" title="行為測試，不是介面測試" body="直接對 WeaponSystem.attack() 下指令，assert EntityData 狀態，不需要 mock" />
-        <PointCard scope={LIGHT} n="→" title="Headless，不開視窗" body="DefaultEntityData 純 in-process；20 個 JUnit 測試在 CI 40 ms 內跑完" />
+        <PointCard scope={LIGHT} n="→" title="Headless，不開視窗" body="DefaultEntityData 純 in-process；全專案 101 個 JUnit 測試在 CI 秒內跑完" />
         <PointCard scope={LIGHT} n="∞" title="無上限碎片驗證" body="第二個 test 再打一個碎片 → 碎片也分裂，確認無 cap 是設計而非意外" />
       </div>
     </div>
@@ -1308,7 +1333,7 @@ const EcsPage: Page = () => (
       scope={LIGHT}
       eyebrow="遊戲架構 · 框架長出來的成品"
       title="ECS — 一份資料，眾系統共用"
-      sub="Zay-ES：9 個 component × ~15 個 system，每幀讀寫同一份 EntityData。資料與行為徹底分離。"
+      sub="Zay-ES：9 個 component × 9 個 system / state，每幀讀寫同一份 EntityData。資料與行為徹底分離。"
     />
     <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '320px 1fr', gap: 54, marginTop: 36, alignItems: 'center' }}>
       <div
@@ -1545,19 +1570,18 @@ export default [
   Cover,
   Thesis,
   Agenda,
+  HarnessCyclePage,
   DesignSection,
   LineagePage,
   GddPage,
   TddPage,
   ArtStylePage,
-  JmeEcsDecisionPage,
   AiDecisionRecordPage,
   AgentsCommandsPage,
   AgentsRulesPage,
   OpenSpecPage,
   ShellRefactorPage,
   DevlogPage,
-  AiDialogPage,
   MilestonePage,
   VerifyPage,
   TestCodePage,
