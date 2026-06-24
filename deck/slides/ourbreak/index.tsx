@@ -2,8 +2,6 @@ import type { DesignSystem, Page, SlideMeta, SlideTransition } from '@open-slide
 import { useSlidePageNumber } from '@open-slide/core';
 
 import interFont from './assets/Inter-Variable.ttf';
-import democonceptImg from './assets/democoncept.png';
-import weaponconceptImg from './assets/weaponconcept.jpg';
 import aiChatImg1 from '@assets/Snipaste_2026-06-24_09-35-45.png';
 import aiChatImg2 from '@assets/Snipaste_2026-06-24_09-36-19.png';
 
@@ -1371,44 +1369,6 @@ const EcsPage: Page = () => (
   </div>
 );
 
-// ─── 12b · Concept art (light) ───────────────────────────────────────────────
-const ConceptArtPage: Page = () => (
-  <div style={contentPage(LIGHT)}>
-    <PageHead
-      scope={LIGHT}
-      eyebrow="遊戲架構 · 設計時的視覺語言"
-      title="概念設計圖 — 先畫出來才能做出來"
-      sub="GDD 配合設計圖寫 spec，agent 照著實作。左：遊戲概念封面；右：武器剋制矩陣視覺化。"
-    />
-    <div
-      style={{
-        flex: 1,
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 28,
-        marginTop: 36,
-        minHeight: 0,
-      }}
-    >
-      <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${LIGHT.border}` }}>
-        <img
-          src={democonceptImg}
-          alt="遊戲概念封面"
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
-      </div>
-      <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${LIGHT.border}` }}>
-        <img
-          src={weaponconceptImg}
-          alt="武器剋制矩陣概念圖"
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
-      </div>
-    </div>
-    <Footer scope={LIGHT} label="遊戲架構 · 概念設計圖" />
-  </div>
-);
-
 // ─── 13 · Logic Flow (dark, state machine + round loop) ───────────────────────
 const FlowBox = ({
   title,
@@ -1586,7 +1546,6 @@ export default [
   VerifyPage,
   TestCodePage,
   EcsPage,
-  ConceptArtPage,
   LogicFlowPage,
   DemoPage,
 ] satisfies Page[];
