@@ -641,6 +641,66 @@ const TddPage: Page = () => (
   </div>
 );
 
+// ─── 06a2 · Art Style — GDD 派生的視覺規格 (light) ─────────────────────────────
+const Swatch = ({ name, hex }: { name: string; hex: string }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+    <span style={{ width: 60, height: 60, borderRadius: 10, background: hex, border: `1px solid ${LIGHT.border}`, flexShrink: 0, display: 'block' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
+      <span style={{ fontSize: 26, fontWeight: 700, color: LIGHT.text }}>{name}</span>
+      <span style={{ fontFamily: MONO, fontSize: 22, color: LIGHT.muted }}>{hex}</span>
+    </div>
+  </div>
+);
+
+const ArtStylePage: Page = () => (
+  <div style={contentPage(LIGHT)}>
+    <PageHead
+      scope={LIGHT}
+      eyebrow="設計架構 · GDD 派生的視覺規格"
+      title="art_style.md — 從世界觀派生視覺"
+      sub="基於 gdd.md 的沙灘世界觀，AI 派生視覺方向與色彩系統 —— 連否決的備選都寫進文件。"
+    />
+    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 56, marginTop: 36, alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div
+          style={{
+            padding: '24px 28px',
+            background: LIGHT.surface,
+            border: `1px solid ${LIGHT.border}`,
+            borderLeft: `5px solid ${LIGHT.accent}`,
+            borderRadius: 8,
+          }}
+        >
+          <div style={{ fontSize: 30, fontWeight: 760, color: LIGHT.text }}>風格定向：熱帶卡通低多邊形</div>
+          <div style={{ fontSize: 24, color: LIGHT.muted, marginTop: 12, lineHeight: 1.45 }}>
+            否決 <span style={{ color: LIGHT.text, fontWeight: 600 }}>像素</span>（不適合第一人稱 3D）· 否決{' '}
+            <span style={{ color: LIGHT.text, fontWeight: 600 }}>寫實</span>（製作成本過高）—— 理由寫進 devlog。
+          </div>
+        </div>
+        <PointCard scope={LIGHT} n="→" title="可讀性優先" body="方塊 / 武器輪廓在第一人稱視角下一眼可辨" />
+        <PointCard scope={LIGHT} n="→" title="色彩編碼" body="每種方塊一個專屬主色，不看文字也能認" />
+      </div>
+      <div>
+        <div style={{ fontSize: 26, fontWeight: 700, color: LIGHT.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 22 }}>
+          9 色主色板 · 色彩編碼
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '26px 34px' }}>
+          <Swatch name="沙灘金 · Sand" hex="#F4D56A" />
+          <Swatch name="熱帶藍 · 天/海" hex="#3AB8E0" />
+          <Swatch name="珊瑚粉 · Shell" hex="#FF6B6B" />
+          <Swatch name="珊瑚橙 · Coral" hex="#FF9F45" />
+          <Swatch name="礁石灰 · Rock" hex="#8E9A9A" />
+          <Swatch name="水母藍紫 · Jelly" hex="#9B7FD4" />
+          <Swatch name="開源紅 · 玩家" hex="#D93E2E" />
+          <Swatch name="椰葉綠 · 植被" hex="#4CAF50" />
+          <Swatch name="純白沙 · UI" hex="#FFF8E7" />
+        </div>
+      </div>
+    </div>
+    <Footer scope={LIGHT} label="設計架構 · art_style.md" />
+  </div>
+);
+
 // ─── 06b · AI 對話截圖 — 為什麼選 jME + Zay-ES (dark) ────────────────────────
 const JmeEcsDecisionPage: Page = () => (
   <div style={contentPage(DARK)}>
@@ -696,6 +756,62 @@ const JmeEcsDecisionPage: Page = () => (
       </div>
     </div>
     <Footer scope={DARK} label="設計架構 · AI 對話截圖" />
+  </div>
+);
+
+// ─── 06c · AI 決策紀錄 — 技術選型可追溯 (light) ────────────────────────────────
+const OptionRow = ({ name, ok, reason }: { name: string; ok: boolean; reason: string }) => (
+  <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, padding: '13px 0', borderTop: `1px solid ${LIGHT.border}` }}>
+    <span style={{ fontSize: 24, fontWeight: 800, color: ok ? LIGHT.accent : LIGHT.cool, width: 26, flexShrink: 0, textAlign: 'center' }}>
+      {ok ? '✓' : '✗'}
+    </span>
+    <span style={{ fontFamily: MONO, fontSize: 25, fontWeight: 700, color: LIGHT.text, width: 178, flexShrink: 0, whiteSpace: 'nowrap' }}>{name}</span>
+    <span style={{ fontSize: 24, fontWeight: 460, color: LIGHT.muted, lineHeight: 1.36 }}>{reason}</span>
+  </div>
+);
+
+const AiDecisionRecordPage: Page = () => (
+  <div style={contentPage(LIGHT)}>
+    <PageHead
+      scope={LIGHT}
+      eyebrow="設計架構 · AI 決策紀錄（可追溯）"
+      title="技術選型 — AI 比過才寫進 TDD"
+      sub="scaffold-jme3-zay-es devlog：AI 查 Maven Central 版本（不靠記憶猜），比過 4 套 ECS 才下決定。"
+    />
+    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: 56, marginTop: 32, alignItems: 'center' }}>
+      <div>
+        <div style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: LIGHT.muted, letterSpacing: '0.04em', marginBottom: 4 }}>
+          // GDD 要求第一人稱 3D + 大量方塊 entity + headless 可測
+        </div>
+        <div style={{ borderBottom: `1px solid ${LIGHT.border}` }}>
+          <OptionRow name="Zay-ES" ok reason="為 jME3 而生 · EntitySet 直接對接 AppState · 同生態系" />
+          <OptionRow name="Artemis-odb" ok={false} reason="更快，但與 jME 無關 → 整合成本高" />
+          <OptionRow name="Ashley" ok={false} reason="libGDX 取向 → 不貼合 jME" />
+          <OptionRow name="DIY" ok={false} reason="過早造輪子" />
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <PointCard scope={LIGHT} n="引擎" title="jME 3.9.0-stable" body="非 3.10（beta）· 非 3.8（已被取代）—— 取 Maven Central 最新 stable" />
+        <PointCard scope={LIGHT} n="記憶" title="Component = record" body="不可變，契合 Zay-ES「換掉整個 component」更新模型，零樣板" />
+      </div>
+    </div>
+    <div
+      style={{
+        marginTop: 24,
+        padding: '18px 28px',
+        background: LIGHT.raised,
+        border: `1px solid ${LIGHT.border}`,
+        borderLeft: `5px solid ${LIGHT.accent}`,
+        borderRadius: 8,
+        fontSize: 25,
+        color: LIGHT.text,
+        lineHeight: 1.4,
+      }}
+    >
+      → 結論寫進 <span style={{ fontFamily: MONO, fontWeight: 700, color: LIGHT.accent }}>tdd.md</span> 與{' '}
+      <span style={{ fontFamily: MONO, fontWeight: 700, color: LIGHT.accent }}>libs.versions.toml</span> —— 每個版本號與選型都在 devlog 留得到推理。
+    </div>
+    <Footer scope={LIGHT} label="設計架構 · AI 決策紀錄" />
   </div>
 );
 
@@ -1433,7 +1549,9 @@ export default [
   LineagePage,
   GddPage,
   TddPage,
+  ArtStylePage,
   JmeEcsDecisionPage,
+  AiDecisionRecordPage,
   AgentsCommandsPage,
   AgentsRulesPage,
   OpenSpecPage,
