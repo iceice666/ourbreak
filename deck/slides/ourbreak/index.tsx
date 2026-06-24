@@ -175,7 +175,7 @@ const Cover: Page = () => (
     </div>
     <Eyebrow color={DARK.accent}>工程紀律 × AI Agent</Eyebrow>
     <h1 style={{ fontSize: 132, fontWeight: 900, lineHeight: 1.08, letterSpacing: '-0.02em', margin: '26px 0 0' }}>
-      如何避免 vibe<br />出一堆垃圾
+      不讓 AI Coder<br />留下一團混亂
     </h1>
     <p style={{ fontSize: 38, lineHeight: 1.5, color: DARK.muted, margin: '34px 0 0', maxWidth: 1180 }}>
       用一套工程框架馴服 coding agent —— 以 <span style={{ color: DARK.text, fontWeight: 600 }}>ourbreak</span> 這款海灘破壞遊戲為例。
@@ -213,7 +213,7 @@ const Thesis: Page = () => (
   <div style={{ ...page(DARK), display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 130px' }}>
     <Eyebrow color={DARK.accent}>命題</Eyebrow>
     <h2 style={{ fontSize: 76, fontWeight: 820, lineHeight: 1.28, margin: '34px 0 0', letterSpacing: '-0.01em' }}>
-      agent 沒規格、沒記憶、沒驗證，<br />於是自信地生出一堆垃圾。
+      agent 沒規格、沒記憶、沒驗證，<br />於是看似忙碌，實則製造混亂。
     </h2>
     <div style={{ display: 'flex', gap: 20, marginTop: 52 }}>
       <ThesisChip label="沒規格 → 自己編需求" />
@@ -222,12 +222,12 @@ const Thesis: Page = () => (
     </div>
     <p style={{ fontSize: 46, fontWeight: 600, lineHeight: 1.45, color: DARK.text, margin: '56px 0 0', maxWidth: 1320 }}>
       解法不是換更強的模型 ——<br />
-      是把 agent <span style={{ color: DARK.accent }}>關進工程框架</span>，讓它只能交出好東西。
+      是把 agent <span style={{ color: DARK.accent }}>納入工程框架</span>，讓它只能交出好東西。
     </p>
     <div style={{ marginTop: 40 }}>
       <Rule color={DARK.accent} width={160} />
     </div>
-    <Footer scope={DARK} label="為什麼會 vibe 出垃圾" />
+    <Footer scope={DARK} label="為什麼 AI 放任開發會失敗" />
   </div>
 );
 
@@ -306,7 +306,7 @@ const HarnessCyclePage: Page = () => (
   <div style={{ ...page(DARK), display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 130px' }}>
     <Eyebrow color={DARK.accent}>工程框架 · 一個閉環</Eyebrow>
     <h2 style={{ fontSize: 64, fontWeight: 840, lineHeight: 1.16, margin: '20px 0 0', letterSpacing: '-0.01em' }}>
-      反 vibe 的閉環 —— spec 進，commit 出
+      工程紀律閉環 —— spec 進，commit 出
     </h2>
     <p style={{ fontSize: 28, fontWeight: 500, color: DARK.muted, margin: '16px 0 0', maxWidth: 1340, lineHeight: 1.5 }}>
       後面每一節都掛在這條鏈上 —— 規格、測試閘門、devlog、commit 不是各自獨立，而是一圈閉環。
@@ -342,7 +342,7 @@ const HarnessCyclePage: Page = () => (
       <span style={{ fontSize: 30, color: DARK.accent }}>↺</span>
       下一個 change 回到「規格」—— 每一圈都留下不可變軌跡。
     </div>
-    <Footer scope={DARK} label="工程框架 · 反 vibe 閉環" />
+    <Footer scope={DARK} label="工程框架 · 紀律閉環" />
   </div>
 );
 
@@ -606,7 +606,7 @@ const LineagePage: Page = () => (
       scope={LIGHT}
       eyebrow="設計架構 · 文件怎麼長出來"
       title="文件血緣 — 一條 GDD 派生鏈"
-      sub="框架是人定的，框架裡的內容才是 AI 派生的 —— 「為什麼用 TDD / SDD」由命題回答，不是跟 AI 辯出來的。"
+      sub="框架是人定的，框架裡的內容才是 AI 派生的 —— 「為什麼用 TDD / SDD」由命題決定，不是讓 AI 自己選。"
     />
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 28, marginTop: 28 }}>
       <div>
@@ -667,9 +667,6 @@ const GddPage: Page = () => (
         >
           <div style={{ fontFamily: MONO, fontSize: 30, fontWeight: 700, color: LIGHT.text }}>
             ρ(r) = 1.20 − 0.40 × 0.85<sup style={{ fontSize: 17 }}>(r−5)</sup>
-          </div>
-          <div style={{ fontSize: 25, color: LIGHT.muted, marginTop: 14, lineHeight: 1.45 }}>
-            要求清除速率漸近 1.20、永遠到不了 —— 難度無限上升卻永不暴衝，玩家輸在技巧用盡而非遊戲耍賴。
           </div>
         </div>
       </div>
@@ -953,7 +950,7 @@ const OpenSpecPage: Page = () => (
   <div style={contentPage(LIGHT)}>
     <PageHead
       scope={LIGHT}
-      eyebrow="設計架構 · 反 vibe 招牌動作"
+      eyebrow="設計架構 · 規格驅動開發"
       title="OpenSpec — Spec-Driven Design"
       sub="寫 code 前先寫 spec。一個 change = 一整包文件，用 SDD 取代 plan mode。"
     />
@@ -976,60 +973,6 @@ const OpenSpecPage: Page = () => (
   </div>
 );
 
-// ─── 08b · Shell Splitting — Before / After refactor (dark) ─────────────────
-const ShellRefactorPage: Page = () => (
-  <div style={contentPage(DARK)}>
-    <PageHead
-      scope={DARK}
-      eyebrow="設計架構 · OpenSpec 真實案例"
-      title="Shell Splitting — spec 驅動的機制重構"
-      sub="問題：Shell 計數器無效，Drone 無弱點。解法：proposal → design → tasks → WeaponSystem。"
-    />
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginTop: 36, alignItems: 'start' }}>
-      <div>
-        <div style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: DARK.cool, letterSpacing: '0.06em', marginBottom: 14 }}>BEFORE</div>
-        <CodeWin file="PlayerHealthComponent.java (已刪)" fontSize={21}>
-          <C c={T.key}>record</C> <C c={T.fn} b>PlayerHealthComponent</C>(<C c={T.str}>float</C> hp){'\n'}
-          {'    '}implements EntityComponent {'{}'}
-        </CodeWin>
-        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <PointCard scope={DARK} n="✗" title="Shell 反射傷害" body="GUN_BASE_DAMAGE = 2.0f · 血量清空無任何後果" />
-          <PointCard scope={DARK} n="✗" title="Drone 無弱點" body="3×3 AoE 橫掃全場，無任何反制" />
-        </div>
-      </div>
-      <div>
-        <div style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: DARK.accent, letterSpacing: '0.06em', marginBottom: 14 }}>AFTER</div>
-        <CodeWin file="WeaponSystem.java" fontSize={21}>
-          <C c={T.com} i>{'// Gun: 單體爆發，一擊清除任意方塊'}</C>{'\n'}
-          <C c={T.key}>public static final float</C> GUN_BASE_DAMAGE = <C c={T.num}>8.0</C>f;{'\n'}
-          <C c={T.com} i>{'// Sword/Drone 打 Shell → 分裂為 N 個新 Shell'}</C>{'\n'}
-          <C c={T.key}>public static final int</C> SHELL_SPLIT_COUNT = <C c={T.num}>2</C>;
-        </CodeWin>
-        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <PointCard scope={DARK} n="✓" title="Shell 倍增懲罰" body="Sword/Drone 打 Shell → 分裂成 2 個（無上限）" />
-          <PointCard scope={DARK} n="✓" title="Gun 才是解答" body="GUN_BASE_DAMAGE 8.0 · 一擊清除，無副作用" />
-        </div>
-      </div>
-    </div>
-    <div
-      style={{
-        marginTop: 24,
-        padding: '16px 24px',
-        background: DARK.surface,
-        border: `1px solid ${DARK.border}`,
-        borderLeft: `5px solid ${DARK.accent}`,
-        borderRadius: 8,
-        fontSize: 25,
-        color: DARK.text,
-        lineHeight: 1.45,
-      }}
-    >
-      <span style={{ color: DARK.accent, fontFamily: MONO, fontWeight: 700 }}>proposal.md</span>：「brainlessly Drone-bombing a wall full of Shells{' '}
-      <span style={{ color: DARK.accent }}>multiplies your workload</span> and burns the survival clock.」
-    </div>
-    <Footer scope={DARK} label="設計架構 · Shell Splitting 重構" />
-  </div>
-);
 
 // ─── 09 · Devlog (dark, timeline) ─────────────────────────────────────────────
 const LogRow = ({
@@ -1481,9 +1424,6 @@ const DemoPage: Page = () => (
       </div>
       <h1 style={{ fontSize: 116, fontWeight: 900, letterSpacing: '-0.02em', margin: 0, lineHeight: 1 }}>Demo</h1>
     </div>
-    <p style={{ fontSize: 36, fontWeight: 500, color: DARK.muted, margin: '34px 0 0', maxWidth: 1280, lineHeight: 1.5 }}>
-      crab-village 圍城、太陽 / 陰影 / god rays 光影，與第一人稱手持武器 —— 框架接住，agent 才做得出來。
-    </p>
     <div style={{ display: 'flex', gap: 14, marginTop: 36 }}>
       <Chip scope={DARK}>WASD 移動</Chip>
       <Chip scope={DARK}>1 劍 · 2 槍 · 3 無人機</Chip>
@@ -1527,7 +1467,7 @@ const DemoPage: Page = () => (
 );
 
 export const meta: SlideMeta = {
-  title: '如何避免 vibe 出垃圾 — ourbreak',
+  title: '馴服 AI Coder — ourbreak 工程紀律實戰',
   createdAt: '2026-06-19T00:34:08.129Z',
 };
 
@@ -1545,7 +1485,6 @@ export default [
   AgentsCommandsPage,
   AgentsRulesPage,
   OpenSpecPage,
-  ShellRefactorPage,
   DevlogPage,
   MilestonePage,
   VerifyPage,
