@@ -1027,6 +1027,30 @@ const DemoPage: Page = () => (
       <Chip scope={DARK}>1 劍 · 2 槍 · 3 無人機</Chip>
       <Chip scope={DARK}>清光進關 · 逾時 Game Over</Chip>
     </div>
+    <a
+      href="https://youtu.be/97LbCJacOzY"
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 22,
+        marginTop: 40,
+        padding: '26px 52px',
+        background: DARK.accent,
+        color: DARK.onAccent,
+        borderRadius: 14,
+        fontSize: 44,
+        fontWeight: 820,
+        letterSpacing: '-0.01em',
+        textDecoration: 'none',
+        boxShadow: '0 18px 44px rgba(20,16,20,0.32)',
+        alignSelf: 'flex-start',
+      }}
+    >
+      <span style={{ fontSize: 40, lineHeight: 1 }}>▶</span>
+      觀看 Demo 影片
+    </a>
     <div style={{ marginTop: 44 }}>
       <Rule color={DARK.accent} width={180} />
     </div>
