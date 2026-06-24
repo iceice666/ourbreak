@@ -2,6 +2,10 @@ import type { DesignSystem, Page, SlideMeta, SlideTransition } from '@open-slide
 import { useSlidePageNumber } from '@open-slide/core';
 
 import interFont from './assets/Inter-Variable.ttf';
+import democonceptImg from './assets/democoncept.png';
+import weaponconceptImg from './assets/weaponconcept.jpg';
+import aiChatImg1 from '@assets/Snipaste_2026-06-24_09-35-45.png';
+import aiChatImg2 from '@assets/Snipaste_2026-06-24_09-36-19.png';
 
 // ─── inm theme tokens (github.com/iceice666/inm · OKLCH → hex) ───────────────
 // Light = warm stone canvas · Dark = plum black canvas. Clay carries action,
@@ -456,6 +460,115 @@ const DesignSection: Page = () => (
   </div>
 );
 
+// ─── 04b · Document lineage — GDD 派生鏈 + 人/AI 分工 (light) ──────────────────
+// The honest spine of section 01: a human sets the *frame* (GDD intent,
+// AGENTS.md rules, the choice to use TDD/SDD at all); the AI derives the
+// *content* inside it (tdd.md, art_style.md, each spec, the code). This page
+// answers "why TDD/SDD" with the thesis, not a fabricated AI debate.
+const ByChip = ({ kind }: { kind: 'human' | 'ai' }) => {
+  const human = kind === 'human';
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 7,
+        padding: '5px 13px',
+        fontSize: 19,
+        fontWeight: 700,
+        whiteSpace: 'nowrap',
+        color: human ? LIGHT.cool : LIGHT.accent,
+        background: LIGHT.raised,
+        border: `1px solid ${human ? LIGHT.cool : LIGHT.accentSoft}`,
+        borderRadius: 999,
+      }}
+    >
+      {human ? '🧑 人定框架' : '🤖 AI 派生'}
+    </span>
+  );
+};
+
+const LineageNode = ({
+  file,
+  role,
+  kind,
+  accent,
+}: {
+  file: string;
+  role: React.ReactNode;
+  kind: 'human' | 'ai';
+  accent?: boolean;
+}) => (
+  <div
+    style={{
+      flex: 1,
+      padding: '20px 24px',
+      background: LIGHT.surface,
+      border: `1px solid ${accent ? LIGHT.accent : LIGHT.border}`,
+      borderLeft: `5px solid ${kind === 'human' ? LIGHT.cool : LIGHT.accent}`,
+      borderRadius: 9,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+      <span style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, color: LIGHT.text }}>{file}</span>
+      <ByChip kind={kind} />
+    </div>
+    <div style={{ fontSize: 23, fontWeight: 460, color: LIGHT.muted, lineHeight: 1.4 }}>{role}</div>
+  </div>
+);
+
+const DeriveArrow = ({ label }: { label: string }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0, width: 92 }}>
+    <span style={{ fontSize: 19, color: LIGHT.cool, whiteSpace: 'nowrap' }}>{label}</span>
+    <span style={{ fontSize: 36, lineHeight: 1, color: LIGHT.accent }}>→</span>
+  </div>
+);
+
+const LineagePage: Page = () => (
+  <div style={contentPage(LIGHT)}>
+    <PageHead
+      scope={LIGHT}
+      eyebrow="設計架構 · 文件怎麼長出來"
+      title="文件血緣 — 一條 GDD 派生鏈"
+      sub="框架是人定的，框架裡的內容才是 AI 派生的 —— 「為什麼用 TDD / SDD」由命題回答，不是跟 AI 辯出來的。"
+    />
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 28, marginTop: 28 }}>
+      <div>
+        <div style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: LIGHT.muted, letterSpacing: '0.04em', marginBottom: 13 }}>
+          // 派生：GDD 一份意圖，AI 展開成兩份規格
+        </div>
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: 6 }}>
+          <LineageNode file="gdd.md" kind="human" role="玩法、世界觀、回合與剋制規則 —— 人寫死「要做什麼」" />
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', flexShrink: 0 }}>
+            <DeriveArrow label="基於 GDD" />
+            <DeriveArrow label="基於 GDD" />
+          </div>
+          <div style={{ flex: 1.15, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <LineageNode file="tdd.md" kind="ai" role="引擎 jME 3.9 · Zay-ES（vs Artemis / DIY）· ECS 切分" />
+            <LineageNode file="art_style.md" kind="ai" role="低多邊形（否決像素 / 寫實）· 9 色色彩編碼" />
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: LIGHT.muted, letterSpacing: '0.04em', marginBottom: 13 }}>
+          // 執行：家規治理下，每個 change 先 spec 後 code
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <LineageNode file="AGENTS.md" kind="human" role="家規 / 硬規則 —— 人定，全程治理" />
+          <DeriveArrow label="先寫" />
+          <LineageNode file="openspec/changes/" kind="ai" role="proposal + design + tasks + spec" accent />
+          <DeriveArrow label="才實作" />
+          <LineageNode file="src/…java" kind="ai" role="照 spec 寫，pre-commit test gate 把關" />
+        </div>
+      </div>
+    </div>
+    <Footer scope={LIGHT} label="設計架構 · 文件血緣" />
+  </div>
+);
+
 // ─── 05 · GDD (light, two-col) ────────────────────────────────────────────────
 const GddPage: Page = () => (
   <div style={contentPage(LIGHT)}>
@@ -525,6 +638,64 @@ const TddPage: Page = () => (
       </div>
     </div>
     <Footer scope={LIGHT} label="設計架構 · TDD" />
+  </div>
+);
+
+// ─── 06b · AI 對話截圖 — 為什麼選 jME + Zay-ES (dark) ────────────────────────
+const JmeEcsDecisionPage: Page = () => (
+  <div style={contentPage(DARK)}>
+    <PageHead
+      scope={DARK}
+      eyebrow="設計架構 · AI 對話截圖"
+      title="AI 選定技術棧的當下"
+      sub="jME + Zay-ES 不是直覺 —— 是 AI 查過 Maven Central 版本、評估 Artemis-odb / Zay-ES / DIY 後寫進 devlog 的決策。"
+    />
+    <div
+      style={{
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 28,
+        marginTop: 36,
+        minHeight: 0,
+      }}
+    >
+      <div
+        style={{
+          borderRadius: 10,
+          overflow: 'hidden',
+          border: `1px solid ${DARK.border}`,
+          background: DARK.surface,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <img
+          src={aiChatImg1}
+          alt="AI 對話截圖 1 — 技術棧選擇"
+          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+        />
+      </div>
+      <div
+        style={{
+          borderRadius: 10,
+          overflow: 'hidden',
+          border: `1px solid ${DARK.border}`,
+          background: DARK.surface,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <img
+          src={aiChatImg2}
+          alt="AI 對話截圖 2 — ECS 決策"
+          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+        />
+      </div>
+    </div>
+    <Footer scope={DARK} label="設計架構 · AI 對話截圖" />
   </div>
 );
 
@@ -647,6 +818,61 @@ const OpenSpecPage: Page = () => (
   </div>
 );
 
+// ─── 08b · Shell Splitting — Before / After refactor (dark) ─────────────────
+const ShellRefactorPage: Page = () => (
+  <div style={contentPage(DARK)}>
+    <PageHead
+      scope={DARK}
+      eyebrow="設計架構 · OpenSpec 真實案例"
+      title="Shell Splitting — spec 驅動的機制重構"
+      sub="問題：Shell 計數器無效，Drone 無弱點。解法：proposal → design → tasks → WeaponSystem。"
+    />
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginTop: 36, alignItems: 'start' }}>
+      <div>
+        <div style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: DARK.cool, letterSpacing: '0.06em', marginBottom: 14 }}>BEFORE</div>
+        <CodeWin file="PlayerHealthComponent.java (已刪)" fontSize={21}>
+          <C c={T.key}>record</C> <C c={T.fn} b>PlayerHealthComponent</C>(<C c={T.str}>float</C> hp){'\n'}
+          {'    '}implements EntityComponent {'{}'}
+        </CodeWin>
+        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <PointCard scope={DARK} n="✗" title="Shell 反射傷害" body="GUN_BASE_DAMAGE = 2.0f · 血量清空無任何後果" />
+          <PointCard scope={DARK} n="✗" title="Drone 無弱點" body="3×3 AoE 橫掃全場，無任何反制" />
+        </div>
+      </div>
+      <div>
+        <div style={{ fontFamily: MONO, fontSize: 21, fontWeight: 700, color: DARK.accent, letterSpacing: '0.06em', marginBottom: 14 }}>AFTER</div>
+        <CodeWin file="WeaponSystem.java" fontSize={21}>
+          <C c={T.com} i>{'// Gun: 單體爆發，一擊清除任意方塊'}</C>{'\n'}
+          <C c={T.key}>public static final float</C> GUN_BASE_DAMAGE = <C c={T.num}>8.0</C>f;{'\n'}
+          <C c={T.com} i>{'// Sword/Drone 打 Shell → 分裂為 N 個新 Shell'}</C>{'\n'}
+          <C c={T.key}>public static final int</C> SHELL_SPLIT_COUNT = <C c={T.num}>2</C>;
+        </CodeWin>
+        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <PointCard scope={DARK} n="✓" title="Shell 倍增懲罰" body="Sword/Drone 打 Shell → 分裂成 2 個（無上限）" />
+          <PointCard scope={DARK} n="✓" title="Gun 才是解答" body="GUN_BASE_DAMAGE 8.0 · 一擊清除，無副作用" />
+        </div>
+      </div>
+    </div>
+    <div
+      style={{
+        marginTop: 24,
+        padding: '16px 24px',
+        background: DARK.surface,
+        border: `1px solid ${DARK.border}`,
+        borderLeft: `5px solid ${DARK.accent}`,
+        borderRadius: 8,
+        fontSize: 25,
+        color: DARK.text,
+        lineHeight: 1.45,
+      }}
+    >
+      <span style={{ color: DARK.accent, fontFamily: MONO, fontWeight: 700 }}>proposal.md</span>：「brainlessly Drone-bombing a wall full of Shells{' '}
+      <span style={{ color: DARK.accent }}>multiplies your workload</span> and burns the survival clock.」
+    </div>
+    <Footer scope={DARK} label="設計架構 · Shell Splitting 重構" />
+  </div>
+);
+
 // ─── 09 · Devlog (dark, timeline) ─────────────────────────────────────────────
 const LogRow = ({
   time,
@@ -700,6 +926,56 @@ const DevlogPage: Page = () => (
       </div>
     </div>
     <Footer scope={DARK} label="開發流程 · Devlog" />
+  </div>
+);
+
+// ─── 09b · AI 決策紀錄 (dark, three quote cards) ──────────────────────────────
+const QuoteCard = ({ slug, quote, decision }: { slug: string; quote: string; decision: string }) => (
+  <div
+    style={{
+      padding: '22px 26px',
+      background: DARK.surface,
+      border: `1px solid ${DARK.border}`,
+      borderRadius: 10,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+    }}
+  >
+    <div style={{ fontFamily: MONO, fontSize: 18, color: DARK.accent, fontWeight: 700 }}>{slug}</div>
+    <div style={{ fontSize: 24, color: DARK.text, lineHeight: 1.5, fontStyle: 'italic' }}>「{quote}」</div>
+    <div style={{ fontSize: 21, color: DARK.muted, lineHeight: 1.4, borderTop: `1px solid ${DARK.border}`, paddingTop: 10 }}>
+      {decision}
+    </div>
+  </div>
+);
+
+const AiDialogPage: Page = () => (
+  <div style={contentPage(DARK)}>
+    <PageHead
+      scope={DARK}
+      eyebrow="開發流程 · AI 助手的決策紀錄"
+      title="Devlog — 每個決定都寫下為什麼"
+      sub="64 篇 devlog，每次 commit 一篇，凍結不可改。不只是日誌 —— 是 AI 在每個架構決策後留下的推理。"
+    />
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18, marginTop: 36 }}>
+      <QuoteCard
+        slug="20260603 · scaffold-jme3-zay-es"
+        quote="Immutability for free; matches Zay-ES's 'replace the component' update model; no boilerplate."
+        decision="決定：Components 改用 Java records。備選 plain class 被明確否決 —— Java 21 下已無優勢。"
+      />
+      <QuoteCard
+        slug="20260616 · coral-regrowth-poison-textures"
+        quote="co-designer wanted the hardcore snowball; the footprint cap keeps it bounded, and 5s felt too vicious in playtest so we slowed it to 7s."
+        decision="決定：Coral 每 7 秒再生（從 5 秒調慢），footprint 防止無限擴張 —— playtest 後調整。"
+      />
+      <QuoteCard
+        slug="20260616 · endless-difficulty-curve"
+        quote="keep the player in the flow channel... the asymptotic rate means walls are always theoretically clearable, so you lose to your own skill, not an unwinnable wall."
+        decision="決定：難度用 Weber–Fechner 漸近模型 ρ(r) = 1.20 − 0.40·0.85^(r−5)，永遠不暴衝，測試鎖死。"
+      />
+    </div>
+    <Footer scope={DARK} label="開發流程 · AI 決策紀錄" />
   </div>
 );
 
@@ -853,6 +1129,48 @@ const VerifyPage: Page = () => (
   </div>
 );
 
+// ─── 11b · Real test code (light) ────────────────────────────────────────────
+const TestCodePage: Page = () => (
+  <div style={contentPage(LIGHT)}>
+    <PageHead
+      scope={LIGHT}
+      eyebrow="成果檢驗 · 真實測試長這樣"
+      title="測試案例 — Shell 機制驗證"
+      sub="來自 WeaponTest.java（337 行 / 20 個測試）。測試的是機制，不是介面：Sword 打 Shell 分裂 2 個，碎片無上限。"
+    />
+    <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 44, marginTop: 36, alignItems: 'center' }}>
+      <CodeWin file="WeaponTest.java" fontSize={19}>
+        <C c={T.punc}>@Test</C>{'\n'}
+        <C c={T.key}>void</C> <C c={T.fn} b>swordShattersShellIntoTwo</C>() {'{'}{'\n'}
+        {'    '}<C c={T.str}>EntityId</C> player = createPlayer(<C c={T.key}>SWORD</C>);{'\n'}
+        {'    '}<C c={T.str}>EntityId</C> shell = createPositionedShell(<C c={T.num}>0</C>f, <C c={T.num}>0</C>f, <C c={T.num}>0</C>f);{'\n'}
+        {'\n'}
+        {'    '}system.attack(player, List.of(shell));{'\n'}
+        {'\n'}
+        {'    '}assertNull(ed.getComponent(shell, BlockComponent.<C c={T.key}>class</C>)); <C c={T.com} i>{'// 原本 shell 消失'}</C>{'\n'}
+        {'    '}assertEquals(<C c={T.num}>2</C>L, shellCount());                           <C c={T.com} i>{'// 分裂成 2 個'}</C>{'\n'}
+        {'}'}{'\n'}
+        {'\n'}
+        <C c={T.punc}>@Test</C>{'\n'}
+        <C c={T.key}>void</C> <C c={T.fn} b>shellFragmentsCanSplitAgainUncapped</C>() {'{'}{'\n'}
+        {'    '}<C c={T.str}>EntityId</C> player = createPlayer(<C c={T.key}>SWORD</C>);{'\n'}
+        {'    '}system.attack(player, List.of(createPositionedShell(<C c={T.num}>0</C>f, <C c={T.num}>0</C>f, <C c={T.num}>0</C>f)));{'\n'}
+        {'    '}assertEquals(<C c={T.num}>2</C>L, shellCount());{'\n'}
+        {'\n'}
+        {'    '}system.attack(player, List.of(anyShell())); <C c={T.com} i>{'// 打其中一個碎片'}</C>{'\n'}
+        {'    '}assertEquals(<C c={T.num}>3</C>L, shellCount()); <C c={T.com} i>{'// 碎片又分裂 — 無上限'}</C>{'\n'}
+        {'}'}
+      </CodeWin>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <PointCard scope={LIGHT} n="→" title="行為測試，不是介面測試" body="直接對 WeaponSystem.attack() 下指令，assert EntityData 狀態，不需要 mock" />
+        <PointCard scope={LIGHT} n="→" title="Headless，不開視窗" body="DefaultEntityData 純 in-process；20 個 JUnit 測試在 CI 40 ms 內跑完" />
+        <PointCard scope={LIGHT} n="∞" title="無上限碎片驗證" body="第二個 test 再打一個碎片 → 碎片也分裂，確認無 cap 是設計而非意外" />
+      </div>
+    </div>
+    <Footer scope={LIGHT} label="成果檢驗 · 真實測試碼" />
+  </div>
+);
+
 // ─── 12 · ECS (light, EntityData hub + systems) ───────────────────────────────
 const SysTile = ({ name, role }: { name: string; role: string }) => (
   <div
@@ -909,6 +1227,44 @@ const EcsPage: Page = () => (
       </div>
     </div>
     <Footer scope={LIGHT} label="遊戲架構 · ECS" />
+  </div>
+);
+
+// ─── 12b · Concept art (light) ───────────────────────────────────────────────
+const ConceptArtPage: Page = () => (
+  <div style={contentPage(LIGHT)}>
+    <PageHead
+      scope={LIGHT}
+      eyebrow="遊戲架構 · 設計時的視覺語言"
+      title="概念設計圖 — 先畫出來才能做出來"
+      sub="GDD 配合設計圖寫 spec，agent 照著實作。左：遊戲概念封面；右：武器剋制矩陣視覺化。"
+    />
+    <div
+      style={{
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 28,
+        marginTop: 36,
+        minHeight: 0,
+      }}
+    >
+      <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${LIGHT.border}` }}>
+        <img
+          src={democonceptImg}
+          alt="遊戲概念封面"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      </div>
+      <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${LIGHT.border}` }}>
+        <img
+          src={weaponconceptImg}
+          alt="武器剋制矩陣概念圖"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      </div>
+    </div>
+    <Footer scope={LIGHT} label="遊戲架構 · 概念設計圖" />
   </div>
 );
 
@@ -1074,15 +1430,21 @@ export default [
   Thesis,
   Agenda,
   DesignSection,
+  LineagePage,
   GddPage,
   TddPage,
+  JmeEcsDecisionPage,
   AgentsCommandsPage,
   AgentsRulesPage,
   OpenSpecPage,
+  ShellRefactorPage,
   DevlogPage,
+  AiDialogPage,
   MilestonePage,
   VerifyPage,
+  TestCodePage,
   EcsPage,
+  ConceptArtPage,
   LogicFlowPage,
   DemoPage,
 ] satisfies Page[];
